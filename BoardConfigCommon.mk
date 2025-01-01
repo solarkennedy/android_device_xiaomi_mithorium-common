@@ -86,11 +86,6 @@ BOARD_QTI_CAMERA_32BIT_ONLY := true
 TARGET_SUPPORT_HAL1 := false
 TARGET_TS_MAKEUP := true
 
-# Display
-TARGET_USES_GRALLOC1 := true
-TARGET_USES_HWC2 := true
-TARGET_USES_ION := true
-
 # GPS
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := default
 LOC_HIDL_VERSION := 4.0
@@ -117,6 +112,9 @@ ifneq ($(TARGET_USES_DEVICE_SPECIFIC_KEYMASTER),true)
 DEVICE_MANIFEST_FILE += $(COMMON_PATH)/configs/manifest/keymaster.xml
 endif
 DEVICE_MATRIX_FILE := $(COMMON_PATH)/compatibility_matrix.xml
+
+# Media
+TARGET_USES_ION := true
 
 # Partitions
 TARGET_COPY_OUT_VENDOR := vendor

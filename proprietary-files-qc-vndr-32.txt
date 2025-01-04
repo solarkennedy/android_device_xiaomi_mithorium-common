@@ -68,24 +68,12 @@ vendor/lib/libllvm-glnext.so
 vendor/lib/libllvm-qcom.so
 
 # Media
-vendor/lib/libAlacSwDec.so
-vendor/lib/libApeSwDec.so
 vendor/lib/libMpeg4SwEncoder.so
-vendor/lib/libOmxAacDec.so
-vendor/lib/libOmxAlacDec.so
-vendor/lib/libOmxAlacDecSw.so
-vendor/lib/libOmxAmrDec.so
-vendor/lib/libOmxAmrwbplusDec.so
-vendor/lib/libOmxApeDec.so
-vendor/lib/libOmxApeDecSw.so
-vendor/lib/libOmxEvrcDec.so
 vendor/lib/libOmxG711Dec.so
-vendor/lib/libOmxQcelp13Dec.so
 vendor/lib/libOmxSwVdec.so
 vendor/lib/libOmxSwVencMpeg4.so
 vendor/lib/libOmxVideoDSMode.so
 vendor/lib/libOmxVpp.so
-vendor/lib/libOmxWmaDec.so
 vendor/lib/libmmosal.so
 vendor/lib/libswvdec.so
 vendor/lib/libvpplibrary.so

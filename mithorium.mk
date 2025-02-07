@@ -202,6 +202,8 @@ PRODUCT_PACKAGES += \
     FMRadio \
     libfmjni
 
+$(call soong_config_set_bool,libfmjni,no_fm_firmware,true)
+
 # Gatekeeper HAL
 ifneq ($(TARGET_USES_DEVICE_SPECIFIC_GATEKEEPER),true)
 PRODUCT_PACKAGES += \

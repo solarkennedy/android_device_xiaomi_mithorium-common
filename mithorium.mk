@@ -76,7 +76,8 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@7.0-impl \
     android.hardware.audio.effect@7.0-impl \
     android.hardware.audio.service \
-    android.hardware.bluetooth.audio-impl
+    android.hardware.bluetooth.audio-impl \
+    android.hardware.soundtrigger@2.1-impl
 
 PRODUCT_PACKAGES += \
     audio.bluetooth.default \
@@ -170,7 +171,9 @@ PRODUCT_PACKAGES += \
     hwcomposer.msm8937
 
 PRODUCT_PACKAGES += \
-    vendor.qti.hardware.memtrack-service
+    android.hardware.memtrack@1.0-impl \
+    android.hardware.memtrack@1.0-service \
+    memtrack.msm8937
 
 PRODUCT_PACKAGES += \
     libdisplayconfig \
@@ -382,7 +385,6 @@ PRODUCT_PACKAGES += \
     libxml2
 
 PRODUCT_PACKAGES += \
-    android.hardware.radio-service.compat \
     android.hardware.radio.c_shim@1.0 \
     android.hardware.radio.c_shim@1.1 \
     android.hardware.radio.c_shim@1.2 \

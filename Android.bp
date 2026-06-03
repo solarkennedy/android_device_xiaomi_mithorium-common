@@ -1,4 +1,9 @@
 soong_namespace {
+    imports: [
+        "hardware/qcom-caf/msm8953",
+        "hardware/qcom-caf/wlan",
+        "vendor/qcom/opensource/display",
+    ],
 }
 
 soong_config_module_type {

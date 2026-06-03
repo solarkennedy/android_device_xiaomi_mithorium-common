@@ -30,13 +30,20 @@ BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
 BOARD_KERNEL_BASE := 0x80000000
 BOARD_KERNEL_CMDLINE := androidboot.hardware=qcom msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 androidboot.bootdevice=7824900.sdhci loop.max_part=7
 BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery printk.devkmsg=on androidboot.boot_devices=soc/7824900.sdhci
-#BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0
+# Serial console (BLSP1_UART1 @ 0x78b0000 on MSM8940). Without console=/earlycon=
+# the 4.19 kernel is silent until late driver init, masking early panics during
+# bring-up. msm_serial driver registers as ttyMSM0.
+BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0x78b0000 ignore_loglevel printk.time=1
+# Bring-up diagnostics: trace every initcall and force unresolved deferred
+# probes to fail after 10s so silent IOMMU-dependent stalls surface as logs.
+# (Per-probe naming is added via a small pr_info in drivers/base/dd.c —
+# embedded quotes in cmdline broke Soong's JSON serialization.)
+BOARD_KERNEL_CMDLINE += initcall_debug deferred_probe_timeout=10
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 BOARD_KERNEL_PAGESIZE :=  2048
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100
 TARGET_KERNEL_SOURCE := kernel/xiaomi/msm8937
 TARGET_KERNEL_VERSION := 4.19
-
 KERNEL_BUILD_OUT_PREFIX := $(BUILD_TOP)/
 
 TARGET_KERNEL_CONFIG := mi8937_defconfig

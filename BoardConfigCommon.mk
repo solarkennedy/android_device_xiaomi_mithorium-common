@@ -37,13 +37,9 @@ BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100
 TARGET_KERNEL_SOURCE := kernel/xiaomi/msm8937
 TARGET_KERNEL_VERSION := 4.19
 
-TARGET_KERNEL_CONFIG := \
-    vendor/msm8937-perf_defconfig \
-    vendor/common.config \
-    vendor/debugfs.config \
-    vendor/feature/android-12.config \
-    vendor/feature/erofs.config \
-    vendor/feature/lmkd.config
+KERNEL_BUILD_OUT_PREFIX := $(BUILD_TOP)/
+
+TARGET_KERNEL_CONFIG := mi8937_defconfig
 
 # Audio
 BOARD_USES_ALSA_AUDIO := true

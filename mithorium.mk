@@ -253,9 +253,9 @@ PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/keylayout/,$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/)
 
 # IPACM
-PRODUCT_PACKAGES += \
-    ipacm \
-    IPACM_cfg.xml
+# PRODUCT_PACKAGES += \
+#     ipacm \
+#     IPACM_cfg.xml
 
 # Kernel
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
@@ -385,7 +385,6 @@ PRODUCT_PACKAGES += \
     android.hardware.secure_element@1.0.vendor \
     android.hardware.secure_element@1.1.vendor \
     android.hardware.secure_element@1.2.vendor \
-    librmnetctl \
     libxml2
 
 PRODUCT_PACKAGES += \
@@ -409,7 +408,10 @@ PRODUCT_PACKAGES += \
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
+    hardware/qcom-caf/wlan \
+    hardware/qcom-caf/msm8953 \
     vendor/qcom/opensource/usb/etc \
+    vendor/qcom/opensource/display \
     $(LOCAL_PATH)
 
 # Speed profile services and wifi-service to reduce RAM and storage
@@ -460,14 +462,12 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     android.hardware.wifi-service \
     libcld80211 \
-    libwifi-hal-ctrl \
     libwpa_client \
     hostapd \
     wcnss_service \
     wificond \
     WifiOverlay \
-    wpa_supplicant \
-    wpa_supplicant.conf
+    wpa_supplicant
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/wifi/p2p_supplicant_overlay.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/p2p_supplicant_overlay.conf \

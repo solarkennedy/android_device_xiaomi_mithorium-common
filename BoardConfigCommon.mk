@@ -38,7 +38,17 @@ BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 ea
 # probes to fail after 10s so silent IOMMU-dependent stalls surface as logs.
 # (Per-probe naming is added via a small pr_info in drivers/base/dd.c —
 # embedded quotes in cmdline broke Soong's JSON serialization.)
-BOARD_KERNEL_CMDLINE += initcall_debug deferred_probe_timeout=10
+BOARD_KERNEL_CMDLINE += deferred_probe_timeout=10 initcall_debug
+# Disable the MSM hardware watchdog during bring-up — matches the 4.9
+# reference cmdline.  Bark deadline is ~14s after watchdog init at ~3.3s
+# (so bite would be ~17.3s), well after current reset point at ~5.5s, but
+# if clock_late_init disables the watchdog's own clock the HW behavior is
+# undefined.  Removing watchdog as a confound during late-init triage.
+BOARD_KERNEL_CMDLINE += watchdog_v2.enable=0
+# Force SysRq mask all-on for serial-break-triggered debug dumps. Defconfig
+# sets CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x1 which only enables loglevel
+# (0-9), not debug commands (t/l/w/h). This boot param overrides at runtime.
+BOARD_KERNEL_CMDLINE += sysrq_always_enabled=1
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 BOARD_KERNEL_PAGESIZE :=  2048
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100

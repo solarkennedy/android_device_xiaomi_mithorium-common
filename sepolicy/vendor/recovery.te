@@ -1,4 +1,15 @@
 recovery_only(`
     allow recovery sysfs_graphics:dir r_dir_perms;
     allow recovery sysfs_graphics:file rw_file_perms;
+
+    # fsck.f2fs walks MMC sysfs to check zoned/partition attributes
+    allow recovery sysfs_mmc_host:dir r_dir_perms;
+    allow recovery sysfs_mmc_host:file r_file_perms;
+
+    # fsck.f2fs uses kill(2) for internal signal handling
+    allow recovery self:capability kill;
+
+    # recovery reads pstore (ramoops) for log display
+    allow recovery pstorefs:dir r_dir_perms;
+    allow recovery pstorefs:file r_file_perms;
 ')

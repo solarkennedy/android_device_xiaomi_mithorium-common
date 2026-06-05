@@ -1,2 +1,5 @@
 # Fastbootd
 ro.fastbootd.available	u:object_r:exported_default_prop:s0
+
+# Set by recovery to indicate adbd security policy; treated as a boot-time property
+ro.adb.secure.recovery	u:object_r:boottime_prop:s0 exact string

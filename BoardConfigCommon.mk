@@ -34,17 +34,6 @@ BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery printk.dev
 # the 4.19 kernel is silent until late driver init, masking early panics during
 # bring-up. msm_serial driver registers as ttyMSM0.
 BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0x78b0000 ignore_loglevel printk.time=1
-# Bring-up diagnostics: trace every initcall and force unresolved deferred
-# probes to fail after 10s so silent IOMMU-dependent stalls surface as logs.
-# (Per-probe naming is added via a small pr_info in drivers/base/dd.c —
-# embedded quotes in cmdline broke Soong's JSON serialization.)
-BOARD_KERNEL_CMDLINE += deferred_probe_timeout=10 initcall_debug
-# Disable the MSM hardware watchdog during bring-up — matches the 4.9
-# reference cmdline.  Bark deadline is ~14s after watchdog init at ~3.3s
-# (so bite would be ~17.3s), well after current reset point at ~5.5s, but
-# if clock_late_init disables the watchdog's own clock the HW behavior is
-# undefined.  Removing watchdog as a confound during late-init triage.
-BOARD_KERNEL_CMDLINE += watchdog_v2.enable=0
 # Force SysRq mask all-on for serial-break-triggered debug dumps. Defconfig
 # sets CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x1 which only enables loglevel
 # (0-9), not debug commands (t/l/w/h). This boot param overrides at runtime.

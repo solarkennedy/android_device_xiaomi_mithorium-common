@@ -1,0 +1,3 @@
+# ro.adb.secure.recovery is labeled boottime_prop (see property_contexts);
+# adbd reads it during startup to decide whether to require auth in recovery.
+get_prop(adbd, boottime_prop)

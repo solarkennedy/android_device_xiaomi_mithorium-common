@@ -12,4 +12,9 @@ recovery_only(`
     # recovery reads pstore (ramoops) for log display
     allow recovery pstorefs:dir r_dir_perms;
     allow recovery pstorefs:file r_file_perms;
+
+    # recovery enumerates loop/block devices (incl. uevent re-trigger)
+    allow recovery sysfs_loop:dir r_dir_perms;
+    allow recovery sysfs_loop:file rw_file_perms;
+    allow recovery sysfs_devices_block:dir r_dir_perms;
 ')

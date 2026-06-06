@@ -31,6 +31,7 @@ on init
     setprop sys.usb.controller ${vendor.usb.controller}
     wait /sys/class/udc/${sys.usb.controller}/state
     setprop sys.usb.configfs 1
+    setprop sys.usb.config adb
 
 on fs
     write /sys/kernel/sdhci_msm/add_host 1

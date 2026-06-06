@@ -197,13 +197,20 @@ PRODUCT_PACKAGES += \
 $(call soong_config_set_bool,libfmjni,no_fm_firmware,true)
 $(call soong_config_set,libfmjni,vendor,qcom)
 
-# Gatekeeper HAL
-ifneq ($(TARGET_USES_DEVICE_SPECIFIC_GATEKEEPER),true)
+# Gatekeeper HAL — software-only default.
+#
+# We have everything needed for hardware-backed gatekeeper (gatekeeper.msm8937.so
+# blob installed, qseecomd running, the keymaster TA on /dev/block/by-name/keymaster
+# also serves gatekeeper requests on this SoC). But vendor.gatekeeper-1-0 SIGABRTs
+# at startup, which cascades into zygote/system_server failing — root cause not
+# yet diagnosed. Until we have logcat from a boot far enough to capture the
+# crash, fall back to software so the device boots.
+#
+# To re-enable hardware gatekeeper later, swap the line below for:
+#   android.hardware.gatekeeper@1.0-impl \
+#   android.hardware.gatekeeper@1.0-service
 PRODUCT_PACKAGES += \
-    android.hardware.gatekeeper@1.0-impl \
-    android.hardware.gatekeeper@1.0-service \
-    android.hardware.gatekeeper@1.0.vendor
-endif
+    android.hardware.gatekeeper@1.0-service.software
 
 # GPS / Location
 include $(LOCAL_PATH)/gps/gps_vendor_product.mk
@@ -272,9 +279,8 @@ endif
 PRODUCT_PACKAGES += \
     android.hardware.lights-service.xiaomi_mithorium
 
-# LiveDisplay
+# LiveDisplay — SDM variant removed; crashes on 4.19 kernel with SIGSEGV
 PRODUCT_PACKAGES += \
-    vendor.lineage.livedisplay-service.sdm \
     vendor.lineage.livedisplay-service.sysfs
 
 $(call soong_config_set_bool,livedisplay_sdm,enable_dm,false)

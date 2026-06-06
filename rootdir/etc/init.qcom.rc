@@ -441,11 +441,13 @@ service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
     user vendor_qrtr
     group vendor_qrtr
     capabilities NET_BIND_SERVICE
+    disabled
 
 service irsc_util /vendor/bin/irsc_util "/vendor/etc/sec_config"
     class core
     user root
     oneshot
+    disabled
 
 service wpa_supplicant /vendor/bin/hw/wpa_supplicant \
     -O/data/vendor/wifi/wpa/sockets -puse_p2p_group_interface=1 -dd \
@@ -490,6 +492,11 @@ service loc_launcher /system/vendor/bin/loc_launcher
     class late_start
     user gps
     group gps
+    # Disabled until GPS config files are extracted (gps.conf, izat.conf,
+    # flp.conf, lowi.conf, apdr.conf) and qcrild is sourced. Without
+    # config + RIL the daemon crashes immediately. Late_start so doesn't
+    # block boot, but cycles every 5s and emits noise.
+    disabled
 
 service qcom-sh /vendor/bin/init.qcom.sh
     class late_start

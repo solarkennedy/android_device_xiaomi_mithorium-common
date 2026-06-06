@@ -1,0 +1,2 @@
+# init.qcom.rc sets permissions on the MMC ext_csd debugfs file
+allow init debugfs_mmc:file setattr;

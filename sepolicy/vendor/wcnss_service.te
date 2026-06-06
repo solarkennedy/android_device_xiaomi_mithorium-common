@@ -1,1 +1,4 @@
 #get_prop(wcnss_service, serialno_prop);
+
+# wcnss_service connects to property service to set status properties
+allow wcnss_service init:unix_stream_socket connectto;

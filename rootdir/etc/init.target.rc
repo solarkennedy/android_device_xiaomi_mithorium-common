@@ -91,6 +91,23 @@ service vendor.qcamerasvr /system/vendor/bin/mm-qcamera-daemon
     class late_start
     user camera
     group camera system inet input graphics
+    disabled
+
+# camera provider — crashes (SIGSEGV) on 4.19 kernel without working qcamera daemon
+service vendor.camera.provider /vendor/bin/hw/android.hardware.camera.provider-service_32.lineage
+    override
+    class hal
+    user cameraserver
+    group audio camera input drmrpc usb
+    disabled
+
+# sensors HAL — exits with status 1; no working sensors.qti binary
+service vendor.sensors-hal-1-0 /vendor/bin/hw/android.hardware.sensors@1.0-service
+    override
+    class hal
+    user system
+    group system wakelock uhid context_hub
+    disabled
 
 on init
    write /dev/stune/top-app/schedtune.colocate 1
@@ -170,6 +187,7 @@ service vendor.per_mgr /system/vendor/bin/pm-service
     class core
     user system
     group system net_raw
+    disabled
 
 service vendor.per_proxy /system/vendor/bin/pm-proxy
     class core

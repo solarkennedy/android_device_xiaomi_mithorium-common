@@ -407,6 +407,11 @@ PRODUCT_PACKAGES += \
     libpower.vendor:64 \
     libsensorndkbridge
 
+# Empty hals.conf so sensorservice starts with no sensors rather than blocking
+# on sensors.ssc.so (which is not present for pepito). Overrides the vendor copy.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/sensors/hals.conf:$(TARGET_COPY_OUT_VENDOR)/etc/sensors/hals.conf
+
 # Shims
 PRODUCT_PACKAGES += \
     libcrypto-v33 \

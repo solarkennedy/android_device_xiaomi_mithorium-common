@@ -1,0 +1,2 @@
+# No firmware files extracted at the common-tree layer; device trees
+# (e.g. Mi8937/proprietary-firmware.txt) handle firmware extraction.

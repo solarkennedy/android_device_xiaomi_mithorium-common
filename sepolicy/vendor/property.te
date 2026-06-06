@@ -1,6 +1,9 @@
 # Baseband
 vendor_public_prop(baseband_prop);
 
+# RIL library path (legacy non-vendor-prefixed name; matches vendor.rild.libpath in newer RILs)
+vendor_internal_prop(vendor_rild_libpath_prop);
+
 # Dirac
 vendor_public_prop(dirac_prop);
 

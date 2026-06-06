@@ -6,6 +6,9 @@ ctl.vendor.imsrcsd         u:object_r:vendor_ctl_vendor_imsrcsservice_prop:s0
 # Baseband
 vendor.gsm.version.baseband	u:object_r:baseband_prop:s0
 
+# Legacy (non-vendor-prefixed) RIL library path set by vendor_init
+rild.libpath	u:object_r:vendor_rild_libpath_prop:s0
+
 # Camera
 camera.					u:object_r:camera_prop:s0
 cameradaemon.SaveMemAtBoot		u:object_r:camera_prop:s0

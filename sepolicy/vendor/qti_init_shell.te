@@ -1,4 +1,5 @@
 allow qti_init_shell proc_watermark_scale_factor:file w_file_perms;
 allow qti_init_shell sysfs_net:file rw_file_perms;
+allow qti_init_shell self:capability dac_read_search;
 
 r_dir_file(qti_init_shell, proc_boot_reason)

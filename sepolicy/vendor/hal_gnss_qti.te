@@ -1,2 +1,5 @@
 # xtra-daemon control
 get_prop(hal_gnss_qti, xtra_control_prop);
+
+# gnss reads boot_status_prop to check boot completion state
+get_prop(hal_gnss_qti, boot_status_prop);

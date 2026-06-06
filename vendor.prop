@@ -52,6 +52,7 @@ audio.offload.min.duration.secs=30
 drm.service.enabled=true
 persist.backup.ntpServer=0.pool.ntp.org
 persist.radio.multisim.config=dsds
+ro.baseband=msm
 persist.vendor.audio.hw.binder.size_kbyte=1024
 persist.vendor.audio.speaker.prot.enable=false
 persist.vendor.dpmhalservice.enable=1

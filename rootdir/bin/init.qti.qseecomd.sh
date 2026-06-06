@@ -28,8 +28,10 @@
 #
 #
 
-while [ "$registered" != "true" ]
+count=0
+while [ "$registered" != "true" ] && [ "$count" -lt 100 ]
 do
     sleep 0.1
     registered="`getprop vendor.sys.listeners.registered`"
+    count=$((count + 1))
 done

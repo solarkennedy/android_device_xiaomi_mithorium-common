@@ -1,8 +1,10 @@
 # Baseband
 vendor_public_prop(baseband_prop);
 
-# RIL library path (legacy non-vendor-prefixed name; matches vendor.rild.libpath in newer RILs)
-vendor_internal_prop(vendor_rild_libpath_prop);
+# vendor_rild_libpath_prop type is already declared by
+# device/qcom/sepolicy-legacy-um (legacy/vendor/common/property.te), pulled in
+# via BoardConfigCommon.mk → SEPolicy.mk. The property_contexts entry for the
+# legacy non-prefixed `rild.libpath` reuses that existing type.
 
 # Dirac
 vendor_public_prop(dirac_prop);

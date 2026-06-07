@@ -400,6 +400,13 @@ PRODUCT_PACKAGES += \
     android.hardware.radio.c_shim@1.2 \
     android.hardware.radio.config@1.1-service.wrapper
 
+# Override vendor qcrild.rc: all three qcrild instances start disabled so that
+# the radio compat service layer (android.hardware.radio-service.compat) manages
+# enabling them. qcrild3 (3rd SIM slot) is kept disabled to stop crash-loop spam
+# on pepito which is dual-SIM at most.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/vendor/etc/init/qcrild.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/qcrild.rc
+
 # Sensors
 PRODUCT_PACKAGES += \
     android.hardware.sensors@1.0-impl \

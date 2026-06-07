@@ -158,10 +158,14 @@ $(call find-copy-subdir-files,*.xml,$(LOCAL_PATH)/audio/mixer_paths/,$(TARGET_CO
 This copies every `*.xml` verbatim, so `mixer_paths.xml` → `/vendor/etc/mixer_paths.xml`. No
 makefile change needed.
 
-Note: `audio_platform_info.xml` is the non-prefixed fallback name for platform info
-(same lookup chain as mixer_paths). Confirmed by `audio_extn_utils_get_platform_info()`.
-If the HAL also aborts on missing platform_info, copy
-`prada_audio_platform_info_intcodec.xml` as `audio_platform_info.xml` as a follow-up.
+**✅ `audio_platform_info.xml` also installed (done 2026-06-06):**
+Stock Palm `audio_platform_info.xml` copied to
+`device/xiaomi/Mi8937/audio/platform_info/audio_platform_info.xml` — installed to
+`/vendor/etc/audio_platform_info.xml` by the existing `find-copy-subdir-files` rule.
+This file provides correct ACDB device IDs, PCM device mappings, and MI2S backend config
+for pepito. Without it the HAL used hardcoded defaults from another device, causing
+Slimbus backend lookups and wrong ACDB IDs (observed as `dev_acdb_id[40]=0` in kernel
+log and persistent PCM underruns).
 
 **Long-term layering fix (deferred):**
 Change `qcom,model` in `pepito/audio.dtsi` from `msm8952-snd-card-mtp` to

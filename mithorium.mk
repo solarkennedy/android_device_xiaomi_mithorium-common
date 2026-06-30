@@ -414,8 +414,12 @@ PRODUCT_PACKAGES += \
     libpower.vendor:64 \
     libsensorndkbridge
 
-# Empty hals.conf so sensorservice starts with no sensors rather than blocking
-# on sensors.ssc.so (which is not present for pepito). Overrides the vendor copy.
+# Base hals.conf naming the SSC sub-HAL. Must be a REAL file in /vendor/etc/sensors
+# (present at the first-stage /vendor mount) because the ADSP/SMGR reads the sensor
+# config very early at boot, before any late per-variant overlay would mount. Each
+# variant's own sensor_def_qcomdev.conf is delivered to the same base dir (pepito:
+# see device/xiaomi/Mi8937 + PLAN-sensors.md). The old "keep empty so sensorservice
+# starts with no sensors" workaround is obsolete now that sensors.ssc.so works.
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/sensors/hals.conf:$(TARGET_COPY_OUT_VENDOR)/etc/sensors/hals.conf
 

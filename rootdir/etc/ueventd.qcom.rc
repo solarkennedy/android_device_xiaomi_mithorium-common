@@ -248,12 +248,25 @@ firmware_directories /vendor/firmware_mnt/image/
 # BHy sensor hub on i2c-2 (4.19 platform/soc path) — allow sensor HAL to control BHy
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     req_fw               0220    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sensor_sel           0220    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sensor_conf          0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sensor_info          0440    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sensor_flush         0220    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sensor_data_size     0220    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     fifo_ctrl            0660    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     fifo_frame           0440    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     meta_event_ctrl      0660    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     param_sel            0660    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     param_val            0660    system   system
 /sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     enable_fifo_log      0220    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     calib_profile        0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     sic_matrix           0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     working_mode         0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     mapping_matrix       0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     mapping_matrix_acc   0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     update_device_info   0220    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     reg_sel              0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     reg_val              0660    system   system
+/sys/devices/platform/soc/78b6000.i2c/i2c-2/2-*     log_raw_data         0220    system   system
 /sys/devices/soc.0/78b6000.i2c/i2c-0/0-*            enable         0660    input    system
 /sys/devices/soc.0/78b6000.i2c/i2c-0/0-*            poll_delay     0660    input    system
 /sys/devices/soc.0/78b6000.i2c/i2c-0/0-*            enable_wakeup  0660    input    system

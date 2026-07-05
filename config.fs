@@ -71,19 +71,19 @@ caps: NET_BIND_SERVICE
 mode: 0755
 user: AID_SYSTEM
 group: AID_SYSTEM
-caps: NET_BIND_SERVICE
+caps: 0
 
 [system/vendor/bin/pm-service]
 mode: 0755
 user: AID_SYSTEM
 group: AID_SYSTEM
-caps: NET_BIND_SERVICE
+caps: 0
 
 [system/bin/pm-service]
 mode: 0755
 user: AID_SYSTEM
 group: AID_SYSTEM
-caps: NET_BIND_SERVICE
+caps: 0
 
 [vendor/bin/pd-mapper]
 mode: 0755
@@ -186,12 +186,6 @@ mode: 0755
 user:  AID_GPS
 group: AID_GPS
 caps: NET_BIND_SERVICE BLOCK_SUSPEND WAKE_ALARM
-
-[vendor/bin/sensors.qti]
-mode: 0755
-user: AID_SYSTEM
-group: AID_SYSTEM
-caps: NET_BIND_SERVICE
 
 [firmware/]
 mode: 0771

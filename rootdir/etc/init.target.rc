@@ -103,7 +103,7 @@ service vendor.qseecomd /vendor/bin/qseecomd
    group root
 
 on boot
-    start rmt_storage
+    start vendor.rmt_storage
     # enable sched boost in order to schedule tasks on perf cluster
     write /proc/sys/kernel/sched_boost 1
 
@@ -175,6 +175,12 @@ service vendor.per_mgr /vendor/bin/pm-service
     class core
     user system
     group system net_raw
+    # The LD_PRELOAD shim below only loads if the linker honors LD_PRELOAD, which
+    # requires AT_SECURE=0. A file capability (security.capability xattr) on the
+    # binary forces AT_SECURE=1, making bionic silently ignore LD_PRELOAD -> the
+    # shim never maps -> pm-service hits the RefBase "stack pointer argument" abort
+    # nondeterministically and crash-loops. So pm-service must carry NO file caps
+    # (NET_BIND_SERVICE removed from config.fs; it never needed it). Do not re-add.
     setenv LD_PRELOAD /vendor/lib64/libshim_pmservice_refbase.so
     disabled
 
@@ -194,9 +200,3 @@ service vendor.hvdcp_opti /vendor/bin/hvdcp_opti
     class main
     user root
     group system wakelock
-
-service vendor.sensors.qti /vendor/bin/sensors.qti
-    class core
-    user system
-    group system
-    disabled

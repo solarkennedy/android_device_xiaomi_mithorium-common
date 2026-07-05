@@ -27,31 +27,15 @@
 #
 
 #
-# Function to start sensors for SSC enabled platforms
+# Set up the sensor registry directory for the SSC HAL
 #
 start_sensors()
 {
-
-    # Palm's Android 8 sensor registry code rejects /persist when it
-    # canonicalizes through the Android 16 /persist -> /mnt/vendor/persist
-    # symlink. Pepito omits the common root symlink and bind-mounts persist
-    # onto a real /persist directory before starting the stock daemon.
-    if [ "$(getprop ro.vendor.xiaomi.device)" = "pepito" ]; then
-        if [ -L /persist ]; then
-            rm /persist
-            mkdir /persist
-        fi
-
-        if ! grep -q " /persist " /proc/mounts; then
-            mount --bind /mnt/vendor/persist /persist
-        fi
-    fi
 
     mkdir -p /persist/sensors/registry/registry
     chmod -h 775 /persist/sensors
     chmod -h 664 /persist/sensors/sensors_settings
     chown -h -R system.system /persist/sensors
-    start vendor.sensors.qti
 
 }
 

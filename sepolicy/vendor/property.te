@@ -14,3 +14,6 @@ vendor_internal_prop(vendor_subsys_state_notifier_prop);
 
 # Xiaomi
 vendor_public_prop(vendor_xiaomi_prop);
+
+# qmux (pepito legacy-ipc_router modem transport toggle, persist.vendor.qmux.*)
+vendor_internal_prop(vendor_qmux_prop);

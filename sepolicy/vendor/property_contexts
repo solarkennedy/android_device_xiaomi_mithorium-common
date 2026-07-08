@@ -37,3 +37,6 @@ vendor.wlan.driver.config	u:object_r:vendor_wifi_version:s0
 
 # Xiaomi
 ro.vendor.xiaomi.	u:object_r:vendor_xiaomi_prop:s0
+
+# qmux (pepito ipc_router modem transport)
+persist.vendor.qmux.	u:object_r:vendor_qmux_prop:s0

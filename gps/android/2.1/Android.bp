@@ -131,10 +131,11 @@ cc_binary {
 }
 
 // [qmux] Wrapper that conditionally preloads the force-ipcr shim (pepito's
-// qmux). The gnss@2.1 service rc execs this instead of the HAL directly.
-sh_binary {
+// qmux). The gnss@2.1 service rc execs this instead of the HAL directly. A C
+// binary (not a shell) so the HAL SELinux domain need not exec a shell.
+cc_binary {
     name: "gnss-qmux-wrapper",
-    src: "gnss-qmux-wrapper.sh",
-    filename: "gnss-qmux-wrapper.sh",
+    srcs: ["gnss-qmux-wrapper.c"],
     vendor: true,
+    cflags: ["-Wall", "-Werror"],
 }

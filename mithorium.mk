@@ -115,7 +115,10 @@ PRODUCT_COPY_FILES += \
 
 # Bluetooth
 PRODUCT_PACKAGES += \
+    android.hardware.bluetooth@1.0-impl \
+    android.hardware.bluetooth@1.0-service \
     android.hardware.bluetooth@1.0.vendor \
+    libbt-vendor \
     vendor.qti.hardware.bluetooth_audio@2.0.vendor \
     vendor.qti.hardware.btconfigstore@1.0.vendor \
     vendor.qti.hardware.btconfigstore@2.0.vendor
@@ -430,6 +433,7 @@ PRODUCT_PACKAGES += \
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
+    hardware/qcom-caf/bt/libbt-vendor \
     hardware/qcom-caf/wlan \
     hardware/qcom-caf/msm8953 \
     vendor/qcom/opensource/usb/etc \

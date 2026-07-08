@@ -1,0 +1,4 @@
+# init.qti.qseecomd.sh mirrors vendor.sys.listeners.registered to the legacy
+# sys.listeners.registered property that the stock A8 keymaster/keystore blobs
+# poll before opening QSEE listeners.
+set_prop(init-qti-fbe-sh, vendor_tee_listener_prop)

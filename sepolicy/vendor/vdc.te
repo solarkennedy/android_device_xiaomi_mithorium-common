@@ -1,0 +1,2 @@
+# vdc kills its own watchdog-timer process group when a vold command times out.
+allow vdc self:capability kill;

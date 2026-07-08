@@ -1,1 +1,2 @@
 allow fsck sysfs_mmc_host:dir search;
+allow fsck sysfs_mmc_host:file r_file_perms;

@@ -2,10 +2,3 @@ service gnss_service /vendor/bin/hw/android.hardware.gnss@2.1-service-qti
     class hal
     user gps
     group system gps radio vendor_qti_diag
-    # [qmux] pepito routes the modem QMI over legacy ipc_router, not QRTR
-    # (PLAN-qmux-bridge.md). The loc stack (libloc_api_v02 -> libqmi_cci)
-    # needs the same force-ipcr shim as qcrild so QMI_LOC (svc 16, on the
-    # ipc_router bus) binds. Gated by a property so this shared rc is a no-op
-    # on every other mithorium variant (empty LD_PRELOAD is ignored): only
-    # pepito's qmux-flip-on.sh sets persist.vendor.qmux.gnss_preload.
-    setenv LD_PRELOAD ${persist.vendor.qmux.gnss_preload:-}

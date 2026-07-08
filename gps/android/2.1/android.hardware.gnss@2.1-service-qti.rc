@@ -1,4 +1,12 @@
-service gnss_service /vendor/bin/gnss-qmux-wrapper
+service gnss_service /vendor/bin/hw/android.hardware.gnss@2.1-service-qti
     class hal
     user gps
     group system gps radio vendor_qti_diag
+    # [qmux] Preload the force-ipcr shim unconditionally. It is a runtime no-op
+    # unless persist.vendor.qmux.enable=1 (pepito), so this is harmless on other
+    # variants and on qmux-off boots; when qmux is on it routes the loc stack's
+    # QMI_LOC to the ipc_router modem. A wrapper can't be used here: init can't
+    # transition into a HAL domain except by exec'ing the HAL directly, and a
+    # HAL domain can't execute_no_trans a non-shell exec_type (hal_neverallows).
+    # See PLAN-qmux-bridge.md.
+    setenv LD_PRELOAD libqmi_force_ipcr.so

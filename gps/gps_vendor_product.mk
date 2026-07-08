@@ -17,3 +17,4 @@ PRODUCT_PACKAGES += libgnss
 
 PRODUCT_PACKAGES += android.hardware.gnss@2.1-impl-qti
 PRODUCT_PACKAGES += android.hardware.gnss@2.1-service-qti
+PRODUCT_PACKAGES += gnss-qmux-wrapper

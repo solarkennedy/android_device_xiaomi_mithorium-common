@@ -1,5 +1,6 @@
 # Bluetooth
 vendor.qcom.bluetooth.soc=pronto
+ro.bt.bdaddr_path=/mnt/vendor/persist/param/btaddr
 
 # Camera
 persist.vendor.camera.HAL3.enabled=1

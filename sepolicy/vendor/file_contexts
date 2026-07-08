@@ -64,5 +64,3 @@
 /sys/devices(/platform)?/soc/78b6000\.i2c/i2c-2/2-[0-9a-f]+/leds(/.*)?		u:object_r:sysfs_leds:s0
 /sys/devices(/platform)?/soc/leds-qpnp-[0-9]+/leds(/.*)?				u:object_r:sysfs_leds:s0
 
-# qmux gnss force-ipcr wrapper (execed by the gnss service in place of the HAL)
-/(vendor|system/vendor)/bin/gnss-qmux-wrapper	u:object_r:hal_gnss_qti_exec:s0

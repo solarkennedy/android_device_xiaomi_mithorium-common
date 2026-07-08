@@ -3,3 +3,11 @@ get_prop(hal_gnss_qti, xtra_control_prop);
 
 # gnss reads boot_status_prop to check boot completion state
 get_prop(hal_gnss_qti, boot_status_prop);
+
+# [qmux] The gnss service execs gnss-qmux-wrapper (a small C binary labeled
+# hal_gnss_qti_exec) which reads the qmux enable prop and, when set, preloads
+# the force-ipcr shim before exec'ing the real HAL (also hal_gnss_qti_exec, so
+# it stays in this domain). No shell involved. No-op on non-pepito variants
+# (the property is unset). See PLAN-qmux-bridge.md.
+allow hal_gnss_qti hal_gnss_qti_exec:file execute_no_trans;
+get_prop(hal_gnss_qti, vendor_qmux_prop)

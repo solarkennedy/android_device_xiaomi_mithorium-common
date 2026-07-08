@@ -18,6 +18,7 @@
 
 # Device nodes
 /dev/stune(/.*)?	u:object_r:cgroup:s0
+/dev/msm_vidc_(dec|dec_sec|enc|reg)	u:object_r:video_device:s0
 
 # Firmware
 /firmware                                                     u:object_r:firmware_file:s0

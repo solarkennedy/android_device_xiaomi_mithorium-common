@@ -1,0 +1,1 @@
+allow fsck sysfs_mmc_host:dir search;

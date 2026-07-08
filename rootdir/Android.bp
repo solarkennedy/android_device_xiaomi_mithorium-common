@@ -94,6 +94,12 @@ sh_binary {
 }
 
 sh_binary {
+    name: "init.wifi.sh",
+    src: "bin/init.wifi.sh",
+    vendor: true,
+}
+
+sh_binary {
     name: "init.qcom.sh",
     src: "bin/init.qcom.sh",
     vendor: true,

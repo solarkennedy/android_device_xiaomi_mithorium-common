@@ -1,0 +1,4 @@
+userdebug_or_eng(`
+    allow incidentd pstorefs:dir { search remove_name write };
+    allow incidentd pstorefs:file { unlink };
+')

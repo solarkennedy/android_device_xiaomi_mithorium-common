@@ -16,7 +16,16 @@ genfscon sysfs /devices/soc/msm-bcl-21/power_supply                  u:object_r:
 genfscon sysfs /devices/soc/qpnp-typec-9/power_supply                  u:object_r:sysfs_batteryinfo:s0
 genfscon sysfs /devices/platform/soc/200f000.qcom,spmi/spmi-0/spmi0-02/200f000.qcom,spmi:qcom,pmi8950@2:vadc@3100 u:object_r:sysfs_battery_supply:s0
 
-# Rmt
+# Rmt / UIO
+# The kernel labels sysfs pseudo-files at creation time via genfscon, before
+# any userspace restorecon runs.  Without these entries every file under
+# /sys/class/uio/ and the underlying device path gets the default 'sysfs'
+# label.  rmt_storage.te only allows 'sysfs_uio' / 'sysfs_uio_file', so
+# rmt_storage is denied when it reads /sys/class/uio/uio0/name to find the
+# RMTFS UIO device — it never opens /dev/uio0, modem EFS is inaccessible,
+# and the modem stalls in OFFLINING state.
+genfscon sysfs /class/uio                                              u:object_r:sysfs_uio:s0
+genfscon sysfs /devices/platform/soc/0.qcom,rmtfs_sharedmem           u:object_r:sysfs_uio_file:s0
 genfscon debugfs /rmt_storage	u:object_r:debugfs_rmt:s0
 
 # RTC

@@ -493,6 +493,7 @@ PRODUCT_PACKAGES += \
     wcnss_service \
     wificond \
     WifiOverlay \
+    wpa_supplicant.conf \
     wpa_supplicant
 
 PRODUCT_COPY_FILES += \
@@ -503,8 +504,12 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/wifi/WCNSS_cfg.dat:$(TARGET_COPY_OUT_VENDOR)/firmware/wlan/prima/WCNSS_cfg.dat \
     $(LOCAL_PATH)/wifi/WCNSS_qcom_cfg.ini:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/WCNSS_qcom_cfg.ini
 
+ifeq ($(TARGET_DEVICE_PEPITO),true)
+$(call soong_config_set_bool,wcnss_service,uses_qcom_wcnss_qmi,false)
+else
 $(call soong_config_set_bool,wcnss_service,uses_qcom_wcnss_qmi,true)
 $(call soong_config_set,wcnss_service,wcnss_qmi_include_dir,$(LOCAL_PATH)/wifi/include)
+endif
 
 # Wifi firmware symlinks
 PRODUCT_PACKAGES += \

@@ -279,6 +279,13 @@ on post-fs-data
     mkdir /data/vendor/location 0770 gps gps
     mkdir /data/vendor/location/mq 0770 gps gps
     mkdir /data/vendor/location/xtwifi 0770 gps gps
+    # Seed an empty gps.prop. It is an optional runtime key=value override file
+    # read by libgps.utils alongside gps.conf; absence is non-fatal for the GNSS
+    # HAL but xtra-daemon crash-loops without it (see PLAN-gps.md / PLAN.md §C).
+    # Real overrides, if ever needed, can be appended here.
+    write /data/vendor/location/gps.prop ""
+    chown gps gps /data/vendor/location/gps.prop
+    chmod 0660 /data/vendor/location/gps.prop
     mkdir /dev/socket/location 0770 gps gps
     mkdir /dev/socket/location/mq 0770 gps gps
     mkdir /dev/socket/location/xtra 0770 gps gps

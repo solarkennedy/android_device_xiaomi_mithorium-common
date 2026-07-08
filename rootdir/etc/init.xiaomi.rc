@@ -63,7 +63,7 @@ on property:hw.fm.init=*
 
 # GPS
 on property:persist.sys.xtra-daemon.enabled=*
-    restart loc_launcher
+    stop loc_launcher
 
 # RIL
 on boot

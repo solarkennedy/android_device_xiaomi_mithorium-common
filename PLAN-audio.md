@@ -1,5 +1,11 @@
 # Audio & Sensor Boot-Block Fix Plan — pepito (PVG100)
 
+> **2026-07-02:** This file is the historical record of the 06-06 boot-block work.
+> Current audio status + staged fixes live in the top-level `PLAN-audio.md`:
+> audio plays through the speaker; remaining issues are the false "Wired headphones"
+> label (MBHC false LINEOUT — see correction in Issue 3 below) and the Issue 4 ACDB
+> version mismatch (still reproduces, verified live).
+
 ## Current Boot Status
 
 System_server reaches running state but never sets `sys.boot_completed`. It is killed
@@ -185,6 +191,96 @@ and future-proof if the property is picked up by other audio services.)
 
 ---
 
+## Issue 3: AUDIO_DEVICE_OUT_LINE always-connected (✅ FIXED 2026-06-06)
+
+### Symptom
+Ringtone preview in sound picker silent. Media volume slider feedback audible. Ring
+stream played through speaker; music stream routed exclusively to `line` output
+(HPHL/HPHR) → silent with no headphones plugged in.
+
+### Root Cause
+`audio_policy_configuration.xml` (mithorium-common) declared `AUDIO_DEVICE_OUT_LINE`
+as a device port with a `route`, but did NOT list it in `attachedDevices`. Android's
+audio policy manager treated it as dynamically connected and, due to some internal APM
+state at boot, resolved STREAM_MUSIC to route exclusively to `line`. Confirmed via
+`adb shell dumpsys audio`: `STREAM_MUSIC: Devices: line`.
+
+~~Pepito's 3.5mm jack is reported as `AUDIO_DEVICE_OUT_WIRED_HEADSET` or
+`AUDIO_DEVICE_OUT_WIRED_HEADPHONE` by the kernel's extcon/switch driver — never as
+`AUDIO_DEVICE_OUT_LINE`.~~ **CORRECTION (2026-07-02): pepito has NO 3.5mm jack at all**
+(USB-C only). The `AUDIO_DEVICE_OUT_LINE` events come from the WCD MBHC *false-detecting*
+a line-out on floating sense lines: the ALSA "Headset Jack" input device asserts
+`SW_LINEOUT_INSERT` + `SW_JACK_PHYSICAL_INSERT` at every boot. Stock Palm has no
+Headset Jack input device — its DTS omits `qcom,msm-mbhc-hphl-swh`/`gnd-swh` so
+`wcd_mbhc_init()` bails before jack creation. Removing the `Line` port (fix below)
+protects *routing*, but WiredAccessoryManager still records the device → UI shows
+"Wired headphones". Root fix (delete the mbhc DT props + a `wcd_mbhc_start` NULL guard)
+is staged in the top-level `PLAN-audio.md` Issue 1. The `Line` port was inherited from
+devices that have a dedicated analog dock output.
+
+### Fix
+Removed the `Line` devicePort entry and its corresponding `route` from
+`device/xiaomi/mithorium-common/audio/audio_policy_configuration.xml`. Music now
+routes to Speaker (and Wired Headphones when jack inserted).
+
+---
+
+## Issue 4: ACDB calibration version mismatch (OPEN — audio quality)
+
+> **Still reproduces 2026-07-02** (verified live during speaker playback: identical
+> `topology id 0x0 ret -95` / `cal_block is NULL` / `dev_acdb_id[40] is 0` /
+> `delay_usec 0` sequence). Option A (prada nightly set) remains the recommended
+> next step — see top-level `PLAN-audio.md` Issue 2.
+
+### Symptom
+Kernel log at every audio stream open:
+```
+afe_send_port_topology_id: AFE set topology id 0x0 enable for port 0x1000 ret -95
+q6asm_send_cal: cal_block is NULL
+send_afe_cal_type: dev_acdb_id[40] is 0
+send_afe_cal_type cal_block not found!!
+afe_send_hw_delay: port_id 0x1000 rate 48000 delay_usec 0 status 0
+```
+Audio plays but DSP runs completely unprocessed: no speaker EQ, no echo cancellation,
+no hardware delay compensation, `delay_usec=0`.
+
+### Root Cause
+The Palm Android 8.1 ACDB files (MTP_*.acdb) were generated for the Android 8
+`acdb_loader` binary, which uses an older internal ACDB block format/version tag. The
+Lineage 23 `acdb_loader` (Android 12/13 era) sends a different version when querying
+calibration blocks, so it cannot locate calibration data for AFE port 0x1000
+(AFE_PORT_ID_PRIMARY_MI2S_RX). The files are loaded (calfile0-6 props are set, acdb
+loader opens them), but no calibration blocks are matched.
+
+`-95 (ENOTSUP)` on the topology set is a secondary symptom: without a valid ACDB
+device ID, the topology ID is 0x0 (invalid), and the ADSP firmware rejects it.
+
+### Fix Options
+
+**Option A — Use prada/santoni ACDB files from the Lineage 23 nightly (preferred):**
+The nightly vendor extraction already has ACDB files for prada/santoni/land/ulysse
+under `/vendor/etc/acdbdata/`. These were generated for the Android 12/13-era
+`acdb_loader` that Lineage 23 ships. Extract a prada or santoni set from the nightly
+vendor.img, install as `/vendor/etc/acdbdata/pepito/`, and accept that the tuning is
+for prada/santoni hardware rather than pepito's. Speaker EQ/mic gain will be
+approximate but DSP processing will function. Audio quality will be noticeably better
+than no calibration.
+
+**Option B — Re-extract ACDB files from an Android 12+ Palm dump (ideal but unclear):**
+If Palm ever shipped a newer Android version (or if a community port exists with
+updated blobs), extract ACDB files from that. Unlikely to exist for PVG-100.
+
+**Option C — Downgrade acdb_loader to Android 8 compatible version:**
+Extract `acdb_loader` from the Palm stock vendor and use it instead of Lineage's.
+Risk: ABI mismatch with Lineage's kernel ACDB ioctl interface (kernel-side ACDB
+driver may have changed between 4.9 and 4.19).
+
+**Recommended next step:** Try Option A — pull prada's ACDB set from a mounted
+Lineage 23 nightly vendor.img and drop it in `audio/acdbdata/pepito/` replacing
+the current Palm Android 8 files. See `PLAN-vendor-extract.md` for mount workflow.
+
+---
+
 ## Other Known Issues (not boot blockers)
 
 ### Radio spam — lineage.hardware.radio.config@1.0::IRadioConfig/default
@@ -243,11 +339,14 @@ These are warnings only; `getService()` calls succeed because qcrild registered 
 ## Priority Order
 
 1. ✅ **Fix sensor HAL** — stubbed `hals.conf` (2026-06-06); sensors.ssc debug deferred post-boot
-2. ✅ **Fix audio HAL mixer_paths.xml** — Palm stock file installed (2026-06-06)
-3. ✅ **Fix radio spam** — disabled qcrild3, added ro.baseband=msm, disabled qcrild/qcrild2 (2026-06-06)
-4. **Verify boot completes** — flash and confirm `sys.boot_completed` is set
-5. **Fix GPS, VINTF, etc.** — polish
-6. **Debug sensors.ssc.so** — re-enable in hals.conf once boot is stable
+2. ✅ **Fix audio HAL mixer_paths.xml + platform_info + ACDB files** — Palm stock files installed (2026-06-06)
+3. ✅ **Fix radio spam** — disabled qcrild3, added ro.baseband=msm (2026-06-06)
+4. ✅ **Fix AUDIO_DEVICE_OUT_LINE routing** — removed Line port from audio policy (2026-06-06); rebuild pending
+5. **Fix ACDB calibration version mismatch** — replace Palm Android 8 ACDB files with prada/santoni set from Lineage 23 nightly (see Issue 4, Option A) — *still open 2026-07-02*
+6. ✅ **Verify boot completes cleanly** — `sys.boot_completed=1` verified 2026-06-10 (see PLAN.md)
+7. **Fix GPS, VINTF, etc.** — polish (GPS gated on modem health — see PLAN-radio.md)
+8. ✅ **Debug sensors.ssc.so** — prox/ALS working 2026-06-29 via base-file `sensor_def_qcomdev.conf` fix; BHy accel/gyro staged (see PLAN-sensors.md)
+9. **Kill false "Wired headphones"** — delete mbhc DT props (stock parity) + `wcd_mbhc_start` guard; staged in top-level `PLAN-audio.md` Issue 1 (2026-07-02)
 
 ---
 

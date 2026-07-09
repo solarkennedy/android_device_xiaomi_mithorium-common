@@ -193,27 +193,36 @@ PRODUCT_PACKAGES += \
     fastbootd
 
 # FM
-PRODUCT_PACKAGES += \
-    FMRadio \
-    libfmjni
+#PRODUCT_PACKAGES += \
+#    FMRadio \
+#    libfmjni
 
 $(call soong_config_set_bool,libfmjni,no_fm_firmware,true)
 $(call soong_config_set,libfmjni,vendor,qcom)
 
-# Gatekeeper HAL — software-only default.
+# Gatekeeper HAL.
 #
-# We have everything needed for hardware-backed gatekeeper (gatekeeper.msm8937.so
-# blob installed, qseecomd running, the keymaster TA on /dev/block/by-name/keymaster
-# also serves gatekeeper requests on this SoC). But vendor.gatekeeper-1-0 SIGABRTs
-# at startup, which cascades into zygote/system_server failing — root cause not
-# yet diagnosed. Until we have logcat from a boot far enough to capture the
-# crash, fall back to software so the device boots.
-#
-# To re-enable hardware gatekeeper later, swap the line below for:
-#   android.hardware.gatekeeper@1.0-impl \
-#   android.hardware.gatekeeper@1.0-service
+# Pepito now defaults to HARDWARE gatekeeper. The earlier software default was a
+# boot-stability workaround for the QSEE keymaster app-load failure; that root
+# cause (RPMB exposed as a chardev) is fixed, so QSEE is healthy. Hardware
+# gatekeeper is also required for credential auth: software gatekeeper + the QTI
+# keymaster TA do not share the auth-token HMAC, so lock-screen verify fails with
+# UserNotAuthenticated. Set TARGET_PEPITO_SOFTWARE_GATEKEEPER=true to fall back.
+ifeq ($(TARGET_DEVICE_PEPITO),true)
+ifeq ($(TARGET_PEPITO_SOFTWARE_GATEKEEPER),true)
 PRODUCT_PACKAGES += \
-    android.hardware.gatekeeper@1.0-service.software
+    android.hardware.gatekeeper@1.0-service.software \
+    libgatekeeper
+else
+PRODUCT_PACKAGES += \
+    android.hardware.gatekeeper@1.0-impl \
+    android.hardware.gatekeeper@1.0-service
+endif
+else
+PRODUCT_PACKAGES += \
+    android.hardware.gatekeeper@1.0-impl \
+    android.hardware.gatekeeper@1.0-service
+endif
 
 # GPS / Location
 include $(LOCAL_PATH)/gps/gps_vendor_product.mk
@@ -266,6 +275,12 @@ PRODUCT_COPY_FILES += \
 # PRODUCT_PACKAGES += \
 #     ipacm \
 #     IPACM_cfg.xml
+
+# Mobile data: rmnet control library, source-built
+# (vendor/qcom/opensource/dataservices). Runtime dep of the netmgrd blob
+# (vendor/xiaomi/Mi8937).
+PRODUCT_PACKAGES += \
+    librmnetctl
 
 # Kernel
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
@@ -401,12 +416,12 @@ PRODUCT_PACKAGES += \
     android.hardware.radio.c_shim@1.0 \
     android.hardware.radio.c_shim@1.1 \
     android.hardware.radio.c_shim@1.2 \
-    android.hardware.radio.config@1.1-service.wrapper
+    android.hardware.radio.config@1.1-service.wrapper \
+    libshim_pmservice_refbase
 
-# Override vendor qcrild.rc: all three qcrild instances start disabled so that
-# the radio compat service layer (android.hardware.radio-service.compat) manages
-# enabling them. qcrild3 (3rd SIM slot) is kept disabled to stop crash-loop spam
-# on pepito which is dual-SIM at most.
+# Override vendor qcrild.rc: keep the existing service names/triggers, but run
+# stock rild from AML0. All instances start disabled so radio compat/init modem
+# triggers manage when slot services start.
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/vendor/etc/init/qcrild.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/qcrild.rc
 
@@ -520,3 +535,6 @@ PRODUCT_PACKAGES += \
 
 # Inherit the proprietary files
 $(call inherit-product, vendor/xiaomi/mithorium-common/mithorium-common-vendor.mk)
+
+# QTI IMS framework stack (VoLTE) — hand-staged add-on, see its Android.bp
+$(call inherit-product, vendor/xiaomi/mithorium-common/ims/ims-vendor.mk)

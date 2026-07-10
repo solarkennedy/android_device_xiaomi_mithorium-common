@@ -103,7 +103,10 @@ service vendor.qseecomd /vendor/bin/qseecomd
    group root
 
 on boot
-    start vendor.rmt_storage
+    # rmt_storage is started from device Mi8937 qmux/init.qmux.rc, selected by
+    # ro.vendor.qmux.enable: the nightly vendor.rmt_storage where =0, the stock
+    # A8 qmux_rmt_storage (ipc_router) on pepito (=1). An unconditional start
+    # here free-ran the nightly one alongside the A8 one on pepito.
     # enable sched boost in order to schedule tasks on perf cluster
     write /proc/sys/kernel/sched_boost 1
 

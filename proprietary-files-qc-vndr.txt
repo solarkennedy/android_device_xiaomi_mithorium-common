@@ -282,8 +282,11 @@ vendor/etc/init/vendor.display.color@1.0-service.rc
 # IMS - from FP3
 -vendor/bin/imsdatadaemon;DISABLE_DEPS
 -vendor/bin/imsqmidaemon;DISABLE_DEPS
-vendor/etc/init/imsdatadaemon.rc
-vendor/etc/init/imsqmidaemon.rc
+# The imsqmidaemon/imsdatadaemon/ims_rtp_daemon/netmgrd/rmt_storage .rc
+# files are deliberately NOT shipped: those daemons are QMI clients that on
+# pepito must carry the libqmi_force_ipcr preload and must not free-run.
+# Their service definitions live in device Mi8937 qmux/init.qmux.rc,
+# selected via ro.vendor.qmux.enable (see PLAN-qmux-bridge.md).
 
 # IMS - imsrcsd - from FP3
 -vendor/bin/imsrcsd;DISABLE_DEPS
@@ -317,7 +320,6 @@ vendor/etc/init/imsrcsd.rc
 
 # IMS - ims_rtp_daemon - from FP3
 -vendor/bin/ims_rtp_daemon;DISABLE_DEPS
-vendor/etc/init/ims_rtp_daemon_legacy.rc
 vendor/etc/seccomp_policy/imsrtp.policy
 -vendor/lib64/lib-imsvtcore.so;DISABLE_DEPS
 -vendor/lib64/lib-rtpcore.so;DISABLE_DEPS
@@ -440,7 +442,6 @@ vendor/etc/init/dataadpl.rc
 # RIL (Data) - Netmgrd - from FP3
 -vendor/bin/netmgrd;DISABLE_DEPS
 vendor/etc/data/netmgr_config.xml
-vendor/etc/init/netmgrd.rc
 -vendor/lib64/libconfigdb.so;DISABLE_DEPS
 -vendor/lib64/libnetmgr.so;DISABLE_DEPS
 -vendor/lib64/libnetmgr_common.so;DISABLE_DEPS
@@ -464,7 +465,6 @@ vendor/radio/qcril_database/upgrade/9_version_update_ecc_table.sql
 
 # RIL (RemoteFS) - from FP3
 -vendor/bin/rmt_storage;DISABLE_DEPS
-vendor/etc/init/vendor.qti.rmt_storage.rc
 
 # RIL (TFTP) - from FP3
 -vendor/bin/tftp_server;DISABLE_DEPS

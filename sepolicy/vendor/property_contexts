@@ -38,5 +38,9 @@ vendor.wlan.driver.config	u:object_r:vendor_wifi_version:s0
 # Xiaomi
 ro.vendor.xiaomi.	u:object_r:vendor_xiaomi_prop:s0
 
-# qmux (pepito ipc_router modem transport)
+# qmux (pepito ipc_router modem transport). ro.vendor.qmux.enable is set by
+# libinit per variant (1 on pepito) and is the production gate read by the
+# libqmi_force_ipcr preload and the init.qmux.rc triggers;
+# persist.vendor.qmux.enable is the explicit bench/escape-hatch override.
 persist.vendor.qmux.	u:object_r:vendor_qmux_prop:s0
+ro.vendor.qmux.	u:object_r:vendor_qmux_prop:s0

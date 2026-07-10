@@ -26,6 +26,9 @@ genfscon sysfs /devices/platform/soc/200f000.qcom,spmi/spmi-0/spmi0-02/200f000.q
 # and the modem stalls in OFFLINING state.
 genfscon sysfs /class/uio                                              u:object_r:sysfs_uio:s0
 genfscon sysfs /devices/platform/soc/0.qcom,rmtfs_sharedmem           u:object_r:sysfs_uio_file:s0
+# On the 4.19 kernel the rmtfs_sharedmem platform device registers WITHOUT the
+# soc/ path component (observed on pepito); cover both spellings.
+genfscon sysfs /devices/platform/0.qcom,rmtfs_sharedmem               u:object_r:sysfs_uio_file:s0
 genfscon debugfs /rmt_storage	u:object_r:debugfs_rmt:s0
 
 # RTC

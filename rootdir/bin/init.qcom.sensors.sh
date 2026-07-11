@@ -27,7 +27,10 @@
 #
 
 #
-# Set up the sensor registry directory for the SSC HAL
+# Set up the sensor registry directory for the SSC HAL and start the stock
+# registry daemon the ADSP's SMGR depends on (see the vendor.sensors.qti
+# service comment in init.target.rc — removing this start regressed all SSC
+# prox/ALS sensors, root-caused 2026-07-10, PLAN-sensors.md).
 #
 start_sensors()
 {
@@ -36,6 +39,7 @@ start_sensors()
     chmod -h 775 /persist/sensors
     chmod -h 664 /persist/sensors/sensors_settings
     chown -h -R system.system /persist/sensors
+    start vendor.sensors.qti
 
 }
 

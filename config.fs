@@ -187,6 +187,17 @@ user:  AID_GPS
 group: AID_GPS
 caps: NET_BIND_SERVICE BLOCK_SUSPEND WAKE_ALARM
 
+# Palm stock sensor registry daemon (pepito, PLAN-sensors.md). caps MUST stay
+# 0: a file capability would set AT_SECURE (see the pm-service note above) and
+# is not needed — the daemon binds no privileged ports, and running WITHOUT
+# CAP_SETUID is load-bearing (it stops the daemon's self-demotion to nobody,
+# which would cost it access to its system-owned /persist/sensors files).
+[vendor/bin/sensors.qti]
+mode: 0755
+user: AID_SYSTEM
+group: AID_SYSTEM
+caps: 0
+
 [firmware/]
 mode: 0771
 user: AID_SYSTEM

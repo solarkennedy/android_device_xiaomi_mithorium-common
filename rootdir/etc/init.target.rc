@@ -203,3 +203,39 @@ service vendor.hvdcp_opti /vendor/bin/hvdcp_opti
     class main
     user root
     group system wakelock
+
+# Palm stock sensor registry daemon (pepito). The ADSP-side SMGR reads its
+# sensor registry over QMI at DSP sensor init from TWO services this daemon
+# hosts on the APPS side (SNS_REG2 svc 0x10f + 0x118, via libqmi_csi); with
+# nobody serving them the DSP sensor stack never initializes and registers
+# ZERO SNS services on the router -> prox/ALS gone (root-caused 2026-07-10,
+# PLAN-sensors.md). Xiaomi siblings' ADSP images self-initialize without an
+# AP daemon; Palm's 2017 image does not — this daemon is load-bearing.
+# user system (not stock's root): without CAP_SETUID the daemon cannot
+# self-demote to (nobody,nobody), so it keeps access to its system-owned
+# /persist/sensors files. Runs in the legacy-um 'sensors' domain
+# (sensors_exec, Mi8937 file_contexts).
+service vendor.sensors.qti /vendor/bin/sensors.qti
+    class core
+    user system
+    group system
+    disabled
+
+# Palm's daemon rejects /persist when it canonicalizes through the common
+# /persist -> /mnt/vendor/persist symlink ("sns_fsa_la: invalid directory
+# path" -> every DSP registry read errors out; on an empty real dir it's
+# "realpath failed for directory name2"). Pepito ships a REAL /persist dir in
+# the system-image root instead (staged by scripts/build-lineage23.sh;
+# BOARD_ROOT_EXTRA_* is dead in the A16 build system) and init binds the
+# persist partition onto it, then starts the daemon — same action, so the
+# ordering is deterministic. post-fs-data is after the fstab mounts and
+# before 'on boot' (class_start core, where init.qcom.sensors.sh issues a
+# redundant-but-harmless second start). Inert on siblings (prop) and on
+# symlink-rooted images (mount through the symlink is a harmless self-bind).
+# ⚠ Trigger form matters: 'on post-fs && property:ro.vendor.xiaomi.device=
+# pepito' did NOT fire on the 2026-07-11 validation boot; this property-first
+# post-fs-data form is the one proven to fire in this tree
+# (init.xiaomi.device.rc:8, observed firing in the same boot's init log).
+on property:ro.vendor.xiaomi.device=pepito && post-fs-data
+    mount none /mnt/vendor/persist /persist bind
+    start vendor.sensors.qti

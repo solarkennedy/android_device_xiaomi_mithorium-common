@@ -1,0 +1,15 @@
+// QRTR bus enumerator — Cluster A measurement tool (PLAN-qrtr.md).
+// Lists every QMI service currently registered on the QRTR bus so we can
+// answer "is QMI_LOC (service 16) advertised?" before chasing pd-mapper / RFS.
+//
+// userdebug/eng debug tool. Needs a qipcrtr_socket sepolicy allow if SELinux
+// is enforcing; fine as-is during permissive bring-up.
+cc_binary {
+    name: "qrtr-services",
+    srcs: ["qrtr-services.c"],
+    vendor: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

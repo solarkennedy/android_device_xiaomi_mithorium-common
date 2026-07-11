@@ -445,6 +445,9 @@ service qcom-c_main-sh /vendor/bin/init.class_main.sh
 on property:vold.decrypt=trigger_restart_framework
     start qcom-c_main-sh
 
+on property:init.svc.vendor.qrtrns.enable=1
+    start vendor.qrtr-ns
+
 service vendor.qrtr-ns /vendor/bin/qrtr-ns -f
     class core
     user vendor_qrtr

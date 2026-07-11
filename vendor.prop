@@ -64,7 +64,7 @@ af.fast_track_multiplier=1
 audio.offload.min.duration.secs=30
 drm.service.enabled=true
 persist.backup.ntpServer=0.pool.ntp.org
-persist.radio.multisim.config=dsds
+persist.radio.multisim.config?=dsds
 ro.baseband=msm
 persist.vendor.audio.hw.binder.size_kbyte=1024
 persist.vendor.audio.speaker.prot.enable=false
@@ -242,7 +242,7 @@ persist.vendor.camera.expose.logicId3=1
 #
 # Set network mode to (T/L/G/W/1X/EVDO, T/L/G/W/1X/EVDO) for 7+7 mode device on DSDS mode
 #
-ro.telephony.default_network=33,33
+ro.telephony.default_network?=33,33
 
 #
 # System props for telephony

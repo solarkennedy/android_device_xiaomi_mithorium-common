@@ -35,43 +35,42 @@
         <fqname>@1.0::IOmx/default</fqname>
         <fqname>@1.0::IOmxStore/default</fqname>
     </hal>
+    <!-- [TEMP][pepito] single-SIM: slot2 instances removed. The HIDL->AIDL radio
+         compat shim (android.hardware.radio-service.compat) enumerates radio slots
+         from this manifest and calls IRadio::getService("slotN") for each; on
+         single-SIM hw getService("slot2") blocks forever, wedging the whole AIDL
+         radio bring-up (incl slot1) -> framework mRadioPowerState=UNAVAILABLE -> no
+         SIM. Matches persist.radio.multisim.config=ssss + disabled qcrild2.
+         Re-scope to pepito-only (or restore slot2 for DSDS siblings) on cleanup. -->
     <hal format="hidl">
         <name>android.hardware.radio</name>
         <transport>hwbinder</transport>
         <fqname>@1.2::ISap/slot1</fqname>
-        <fqname>@1.2::ISap/slot2</fqname>
         <fqname>@1.5::IRadio/slot1</fqname>
-        <fqname>@1.5::IRadio/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.data</name>
         <fqname>IRadioData/slot1</fqname>
-        <fqname>IRadioData/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.messaging</name>
         <fqname>IRadioMessaging/slot1</fqname>
-        <fqname>IRadioMessaging/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.modem</name>
         <fqname>IRadioModem/slot1</fqname>
-        <fqname>IRadioModem/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.network</name>
         <fqname>IRadioNetwork/slot1</fqname>
-        <fqname>IRadioNetwork/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.sim</name>
         <fqname>IRadioSim/slot1</fqname>
-        <fqname>IRadioSim/slot2</fqname>
     </hal>
     <hal format="aidl">
         <name>android.hardware.radio.voice</name>
         <fqname>IRadioVoice/slot1</fqname>
-        <fqname>IRadioVoice/slot2</fqname>
     </hal>
     <hal format="hidl">
         <name>android.hardware.sensors</name>

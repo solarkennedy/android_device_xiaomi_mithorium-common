@@ -44,3 +44,11 @@ ro.vendor.xiaomi.	u:object_r:vendor_xiaomi_prop:s0
 # persist.vendor.qmux.enable is the explicit bench/escape-hatch override.
 persist.vendor.qmux.	u:object_r:vendor_qmux_prop:s0
 ro.vendor.qmux.	u:object_r:vendor_qmux_prop:s0
+# vendor.qmux.ims_enabler = status of the VoLTE NV self-heal oneshot
+# (ok | applied | failed | off), set by ims_enabler each boot.
+vendor.qmux.	u:object_r:vendor_qmux_prop:s0
+
+# gotweaks (PLAN-perf-battery.md) - user-toggleable Go-style low-RAM tuning,
+# set directly by the LineageParts settings screen (system_app). System-owned
+# (see property.te) - not persist.vendor., a coredomain app cannot set those.
+persist.gotweak.	u:object_r:gotweak_prop:s0

@@ -837,7 +837,17 @@ function configure_zram_parameters() {
         let zRamSizeMB=4096
     fi
 
-    if [ "$low_ram" == "true" ]; then
+    # gotweaks (PLAN-perf-battery.md): persist.gotweak.zram_zstd opts into
+    # zstd instead of lz4 - better compression ratio (more effective swap
+    # capacity for the same disksize) at the cost of more CPU per page
+    # (de)compression. Must be set before disksize/mkswap/swapon below, and
+    # only takes effect on the next full boot (comp_algorithm can't be
+    # changed once zram is live and already acting as swap).
+    zram_zstd=`getprop persist.gotweak.zram_zstd`
+
+    if [ "$zram_zstd" == "1" ]; then
+        echo zstd > /sys/block/zram0/comp_algorithm
+    elif [ "$low_ram" == "true" ]; then
         echo lz4 > /sys/block/zram0/comp_algorithm
     fi
 

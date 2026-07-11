@@ -465,6 +465,8 @@ vendor/radio/qcril_database/upgrade/9_version_update_ecc_table.sql
 
 # RIL (RemoteFS) - from FP3
 -vendor/bin/rmt_storage;DISABLE_DEPS
+-vendor/bin/rfs_access;DISABLE_DEPS
+-vendor/bin/pd-mapper;DISABLE_DEPS
 
 # RIL (TFTP) - from FP3
 -vendor/bin/tftp_server;DISABLE_DEPS

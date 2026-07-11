@@ -534,6 +534,10 @@ service vendor.atfwd /vendor/bin/ATFWD-daemon
     user system
     group system radio
 
+service vendor.tftp_server /vendor/bin/tftp_server
+    class core
+    user root
+
 service vendor.ssr_diag /system/vendor/bin/ssr_diag
     class late_start
     user system

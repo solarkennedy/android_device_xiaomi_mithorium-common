@@ -103,29 +103,33 @@ user: AID_SYSTEM
 group: AID_SYSTEM
 caps: NET_BIND_SERVICE
 
+# imsdatadaemon/ims_rtp_daemon: caps must stay 0 — a file capability sets
+# AT_SECURE=1 and bionic then drops the LD_PRELOAD force-ipcr shim, so the
+# daemon's QMI lands on QRTR where the modem can't see it (same trap as
+# pm-service, see init.target.rc). Neither daemon binds a privileged port.
 [vendor/bin/imsdatadaemon]
 mode: 0755
 user: AID_RADIO
 group: AID_RADIO
-caps: NET_BIND_SERVICE
+caps: 0
 
 [system/vendor/bin/imsdatadaemon]
 mode: 0755
 user: AID_RADIO
 group: AID_RADIO
-caps: NET_BIND_SERVICE
+caps: 0
 
 [vendor/bin/ims_rtp_daemon]
 mode: 0755
 user: AID_RADIO
 group: AID_RADIO
-caps: NET_BIND_SERVICE
+caps: 0
 
 [system/vendor/bin/ims_rtp_daemon]
 mode: 0755
 user: AID_RADIO
 group: AID_RADIO
-caps: NET_BIND_SERVICE
+caps: 0
 
 [vendor/bin/imsrcsd]
 mode: 0755

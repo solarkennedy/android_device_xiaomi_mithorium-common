@@ -35,3 +35,9 @@ do
     registered="`getprop vendor.sys.listeners.registered`"
     count=$((count + 1))
 done
+
+if [ "$registered" = "true" ]; then
+    # Older Qualcomm keymaster blobs, including stock pepito, wait on the
+    # pre-Treble property name even when qseecomd publishes the vendor name.
+    setprop sys.listeners.registered true
+fi

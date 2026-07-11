@@ -4,6 +4,11 @@ ro.bt.bdaddr_path=/mnt/vendor/persist/param/btaddr
 
 # Camera
 persist.vendor.camera.HAL3.enabled=1
+# [pepito] non-vendor variant: the Palm/Android-8 QTI camera HAL reads
+# persist.camera.HAL3.enabled (NOT the vendor one). Without it the HAL reports
+# HAL1/device@1.1 and modern cameraserver rejects it ("does not support HAL3.2+")
+# -> 0 cameras. With it, QCamera2Factory isHAL3Enabled:1 -> both cameras enumerate.
+persist.camera.HAL3.enabled=1
 
 # Display
 debug.sf.enable_hwc_vds=1

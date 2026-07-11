@@ -1,3 +1,6 @@
 allow hal_camera_default camera_data_file:sock_file write;
 
 get_prop(hal_camera_default, bootanim_system_prop)
+
+# follows the qcam symlink under /data/vendor/camera
+allow hal_camera_default vendor_camera_data_file:lnk_file read;

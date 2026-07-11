@@ -178,13 +178,13 @@ service vendor.per_mgr /vendor/bin/pm-service
     class core
     user system
     group system net_raw
-    # The LD_PRELOAD shim below only loads if the linker honors LD_PRELOAD, which
-    # requires AT_SECURE=0. A file capability (security.capability xattr) on the
-    # binary forces AT_SECURE=1, making bionic silently ignore LD_PRELOAD -> the
-    # shim never maps -> pm-service hits the RefBase "stack pointer argument" abort
-    # nondeterministically and crash-loops. So pm-service must carry NO file caps
-    # (NET_BIND_SERVICE removed from config.fs; it never needed it). Do not re-add.
-    setenv LD_PRELOAD /vendor/lib64/libshim_pmservice_refbase.so
+    # The refbase shim rides as a patched-in DT_NEEDED of the pm-service blob
+    # (extract-files.py blob_fixups), NOT an LD_PRELOAD: the linker only honors
+    # LD_PRELOAD with AT_SECURE=0, and AT_SECURE=1 is forced both by file caps
+    # (the original bug: security.capability xattr -> shim never maps ->
+    # RefBase "stack pointer argument" abort crash-loop; NET_BIND_SERVICE
+    # removed from config.fs, do not re-add) and, under Enforcing, by init
+    # lacking noatsecure (neverallow init *:process noatsecure, b/140789528).
     disabled
 
 service vendor.per_proxy /vendor/bin/pm-proxy

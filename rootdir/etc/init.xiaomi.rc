@@ -66,16 +66,40 @@ on property:persist.sys.xtra-daemon.enabled=*
     stop loc_launcher
 
 # RIL
-on boot
+# [qmux] Every stock vendor.qcrild start path is gated on ro.vendor.qmux.enable=0
+# (libinit: 0 everywhere except pepito). On pepito telephony is qmux_qcrild
+# (init.qmux.rc); vendor.qcrild must NEVER run beside it — a second qcrild is a
+# second QMI voice client that clobbers the IRadio hwservice registration and
+# instantly kills every INCOMING call (MO calls still work, so it looks like a
+# carrier problem: straight to voicemail + "missed call"). The `enable` below
+# was exactly that bug: it un-disables the service, so it launched with class
+# main 3s after qmux_qcrild (found 2026-07-10, first enforcing flash).
+on boot && property:ro.vendor.qmux.enable=0
     enable vendor.qcrild
+
+on boot && property:persist.radio.multisim.config=dsds
+    enable vendor.qcrild2
+
+on boot && property:persist.radio.multisim.config=dsda
+    enable vendor.qcrild2
+
+on boot && property:persist.radio.multisim.config=tsts
     enable vendor.qcrild2
 
 on property:vendor.subsys_state_notifier.modem.state=OFFLINE
     stop vendor.qcrild
     stop vendor.qcrild2
 
-on property:vendor.subsys_state_notifier.modem.state=ONLINE
+on property:vendor.subsys_state_notifier.modem.state=ONLINE && property:ro.vendor.qmux.enable=0
     start vendor.qcrild
+
+on property:vendor.subsys_state_notifier.modem.state=ONLINE && property:persist.radio.multisim.config=dsds
+    start vendor.qcrild2
+
+on property:vendor.subsys_state_notifier.modem.state=ONLINE && property:persist.radio.multisim.config=dsda
+    start vendor.qcrild2
+
+on property:vendor.subsys_state_notifier.modem.state=ONLINE && property:persist.radio.multisim.config=tsts
     start vendor.qcrild2
 
 on property:init.svc.vendor.qcrild=stopped

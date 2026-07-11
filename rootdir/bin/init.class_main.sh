@@ -83,12 +83,23 @@ case "$baseband" in
         fi
     fi
 
+    # [qmux] On pepito telephony is qmux_qcrild (init.qmux.rc); vendor.qcrild
+    # must never run beside it (a second QMI voice client clobbers the IRadio
+    # registration and insta-kills incoming calls). Everywhere else this is
+    # stock behavior. (Replaces the retired bring-up hold on
+    # persist.vendor.radio.autostart — the AML0 modem ERR_FATAL is fixed.)
+    if [ "`getprop ro.vendor.qmux.enable`" = "1" ]; then
+        qcrild_status=hold
+    fi
+
     if [ "$qcrild_status" = "true" ]; then
         # Make sure both rild, qcrild are not running at same time.
         # This is possible with vanilla aosp system image.
         stop vendor.ril-daemon
 
         start vendor.qcrild
+    elif [ "$qcrild_status" = "hold" ]; then
+        log -t init.class_main "[qmux] vendor.qcrild held: telephony runs as qmux_qcrild"
     else
         start vendor.ril-daemon
     fi

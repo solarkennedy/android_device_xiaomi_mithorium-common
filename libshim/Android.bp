@@ -79,3 +79,40 @@ cc_library_shared {
     shared_libs: ["libgui_vendor"],
     vendor: true,
 }
+
+cc_library_shared {
+    name: "libshim_pmservice_refbase",
+    srcs: ["libshim_pmservice_refbase.cpp"],
+    shared_libs: ["libutils"],
+    vendor: true,
+    compile_multilib: "64",
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+}
+
+// libqmi_force_ipcr — [qmux bridge, Architecture D; pepito]
+// socket()-interposing shim that forces QTI libqmi_cci onto its native
+// IPC-Router (AF_MSM_IPC) backend by failing the AF_QIPCRTR probe. Rides as
+// DT_NEEDED of its consumers (patched into the Mi8937 nightly QMI blobs +
+// linked into the gnss service and ims_enabler) — NOT LD_PRELOAD, which
+// bionic scrubs under Enforcing (init may never grant noatsecure,
+// b/140789528). Self-gates on the qmux props, so it is a no-op on every
+// non-pepito variant. Lives here (not device/xiaomi/Mi8937/qmux) because the
+// family-wide gnss service links it and soong namespaces only import
+// downward. See PLAN-qmux-bridge.md.
+cc_library_shared {
+    name: "libqmi_force_ipcr",
+    srcs: ["qmi_force_ipcr.c"],
+    vendor: true,
+    compile_multilib: "both",
+    cflags: ["-Wall", "-Werror"],
+    // DF_1_GLOBAL: bionic adds this lib to the process's GLOBAL symbol group
+    // on load, so the socket() interpose also binds inside dlopen()ed
+    // dependency groups (the gnss loc stack and ims_enabler load their QMI
+    // libs via dlopen — a plain DT_NEEDED lib only interposes for the
+    // executable's own local group, which is what LD_PRELOAD used to cover).
+    ldflags: ["-Wl,-z,global"],
+}

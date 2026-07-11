@@ -426,7 +426,7 @@ esac
 case "$target" in
        "msm8937")
           case "$soc_hwid" in
-              386|354|353|303)
+              386|354|353|303|313)
                  # enable qrtr-ns service for kernel 4.14 or above
                  KernelVersionStr=`cat /proc/sys/kernel/osrelease`
                  KernelVersionS=${KernelVersionStr:2:2}

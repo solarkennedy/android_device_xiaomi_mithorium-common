@@ -1,0 +1,2 @@
+# apexd signals stale sessions during boot on this platform
+allow apexd self:capability kill;

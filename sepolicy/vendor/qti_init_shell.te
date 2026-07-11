@@ -1,2 +1,12 @@
 allow qti_init_shell proc_watermark_scale_factor:file w_file_perms;
 allow qti_init_shell sysfs_net:file rw_file_perms;
+
+# init.qcom.early_boot.sh reads /proc/sys/kernel/boot_reason (genfs-labeled)
+# and chowns the charging-LED secure_mode node.
+allow qti_init_shell proc_boot_reason:file r_file_perms;
+allow qti_init_shell sysfs_leds:file setattr;
+
+# mkdir -p probes dirs owned by other users; dac_override/dac_read_search are
+# neverallowed outside the core allowlist (system/sepolicy private/domain.te),
+# and the probe failing is harmless — just keep it out of the audit log.
+dontaudit qti_init_shell self:capability { dac_override dac_read_search };

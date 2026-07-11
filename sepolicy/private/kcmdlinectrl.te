@@ -1,0 +1,2 @@
+# kcmdlinectrl reads the DT firmware node to inspect androidboot params
+allow kcmdlinectrl sysfs_dt_firmware_android:file r_file_perms;

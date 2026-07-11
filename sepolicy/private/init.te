@@ -1,0 +1,4 @@
+# AOSP init.rc chmods /d/mmc0/mmc0:0001/ext_csd for storaged eMMC health, but
+# debugfs_mmc writes are neverallowed even for init (domain.te) — the chmod
+# failing is a known-benign AOSP wart; just keep it out of the audit log.
+dontaudit init debugfs_mmc:file setattr;

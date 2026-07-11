@@ -1,0 +1,2 @@
+# misctrl (16KB page-size bookkeeping) reads the DT firmware compatible node
+allow misctrl sysfs_dt_firmware_android:file r_file_perms;

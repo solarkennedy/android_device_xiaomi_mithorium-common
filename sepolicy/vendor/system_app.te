@@ -1,3 +1,5 @@
 allow system_app fm_radio_device:chr_file r_file_perms;
 
 binder_call(system_app, hal_rcsservice)
+# Settings/telephony UI probes the QTI UCE (RCS presence) hwservice
+allow system_app hal_imsrcsd_hwservice:hwservice_manager find;

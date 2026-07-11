@@ -112,6 +112,12 @@ cc_binary {
     relative_install_path: "hw",
 
     shared_libs: [
+        // [qmux] interposes socket() to fail the AF_QIPCRTR probe so
+        // libqmi_cci uses its ipc_router backend; self-gates on the qmux
+        // props (no-op on non-pepito). Linked (not LD_PRELOADed): init may
+        // not grant noatsecure (neverallow, b/140789528), so under Enforcing
+        // AT_SECURE=1 makes bionic silently scrub LD_PRELOAD.
+        "libqmi_force_ipcr",
         "liblog",
         "libcutils",
         "libdl",

@@ -8,6 +8,7 @@ from extract_utils.file import File
 from extract_utils.fixups_blob import (
     BlobFixupCtx,
     blob_fixup,
+    blob_fixups_user_type,
 )
 from extract_utils.main import (
     ExtractUtils,
@@ -16,12 +17,23 @@ from extract_utils.main import (
 
 namespace_imports = []
 
+blob_fixups: blob_fixups_user_type = {
+    # The RefBase shim rides as DT_NEEDED, not LD_PRELOAD (see the
+    # vendor.per_mgr stanza in rootdir/etc/init.target.rc: AT_SECURE=1 —
+    # from file caps or, under Enforcing, init lacking noatsecure — makes
+    # bionic silently scrub LD_PRELOAD and pm-service crash-loops).
+    'vendor/bin/pm-service': blob_fixup().add_needed(
+        'libshim_pmservice_refbase.so'
+    ),
+}
+
 module = ExtractUtilsModule(
     'mithorium-common',
     'xiaomi',
     namespace_imports=namespace_imports,
     add_firmware_proprietary_file=True,
     skip_main_proprietary_file=True,
+    blob_fixups=blob_fixups,
 )
 module.add_proprietary_file('proprietary-files-misc.txt')
 module.add_proprietary_file('proprietary-files-qc-sys.txt')

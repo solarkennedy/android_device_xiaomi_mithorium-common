@@ -1,0 +1,33 @@
+# gotweaks — user-toggleable Android-Go-style low-RAM tuning, no root required.
+# See PLAN-perf-battery.md. The LineageParts settings screen (system_app,
+# per seapp_contexts user=system+seinfo=platform) writes persist.gotweak.*
+# directly; init.gotweaks.rc's `on property:` triggers do the actual
+# ro.*/dalvik.vm.*/pm.dexopt.* writes.
+get_prop(system_app, gotweak_prop)
+set_prop(system_app, gotweak_prop)
+
+# vendor_init (the second-stage init domain that parses vendor rc files,
+# including init.gotweaks.rc) must be able to read this property just to
+# evaluate the `on property:` trigger condition - declaring it
+# system_public_prop does NOT imply this. Missing this grant made every
+# trigger in init.gotweaks.rc fail to register at all under Enforcing
+# ("ParseTriggers() failed: unexported property trigger found"), caught on
+# the 2026-07-10 validation boot.
+get_prop(vendor_init, gotweak_prop)
+
+# GPU max-clock cap toggle: init.gotweaks.rc writes kgsl-3d0's max_pwrlevel
+# sysfs node directly from an `on property:` trigger (vendor_init domain),
+# not via the qti_init_shell script domain that init.qcom.post_boot.sh runs
+# in - qti_init_shell's existing sysfs_kgsl grant (r_file_perms + setattr,
+# device/qcom/sepolicy-legacy-um's init_shell.te) does not apply here and
+# does not include write anyway. Checked for an existing vendor_init grant
+# before relying on one, per the gotweak_prop lesson above - there wasn't one.
+allow vendor_init sysfs_kgsl:file rw_file_perms;
+
+# zram compression algorithm toggle: read by init.qcom.post_boot.sh's
+# configure_zram_parameters(), which runs as qti_init_shell (file_contexts
+# labels the script qti_init_shell_exec) - a third domain, distinct from
+# both system_app and vendor_init above, needing its own get_prop grant.
+# The actual sysfs_zram write is already covered: qti_init_shell already
+# writes comp_algorithm today for the ro.config.low_ram case.
+get_prop(qti_init_shell, gotweak_prop)

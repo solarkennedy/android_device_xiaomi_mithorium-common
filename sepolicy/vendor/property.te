@@ -17,3 +17,11 @@ vendor_public_prop(vendor_xiaomi_prop);
 
 # qmux (pepito legacy-ipc_router modem transport toggle, persist.vendor.qmux.*)
 vendor_internal_prop(vendor_qmux_prop);
+
+# gotweaks (user-toggleable low-RAM tuning, persist.gotweak.*). System-owned,
+# not vendor: system_app (LineageParts, coredomain) sets it directly, and the
+# global Treble neverallow (system/sepolicy/private/property.te) forbids any
+# coredomain from setting a vendor-owned property, public or not. The
+# vendor-side init.gotweaks.rc trigger reads this system property fine -
+# only the *write* side needs system ownership.
+system_public_prop(gotweak_prop);

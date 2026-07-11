@@ -1,0 +1,49 @@
+# Android-Go-style memory tweaks, individually user-toggleable (no root, no rebuild)
+# via persist.gotweak.* properties. Values sourced from AOSP
+# build/make/target/product/go_defaults_common.mk + go_defaults_common.prop.
+# Default off everywhere; safe on any Mi8937/mithorium variant.
+#
+# on property: triggers evaluate current state at registration time (persist
+# properties are already loaded by then), so these apply from the first boot
+# after the toggle is set - no separate "apply" step needed beyond a reboot
+# for the ro.*-backed ones.
+
+# Master low-RAM flag. ro.* -> requires reboot. Side effect: AOSP drops any
+# notLowRam="true" hardware feature the moment this is true, regardless of
+# which handheld_core_hardware.xml is installed - on pepito's current
+# manifest that's android.software.picture_in_picture, voice_recognizers,
+# and activities_on_secondary_displays.
+on property:persist.gotweak.low_ram=1
+    setprop ro.config.low_ram true
+
+# Trimmed Dalvik heap (128m/256m vs pepito's stock 192m/512m). Read once by
+# zygote at its own startup -> requires reboot.
+on property:persist.gotweak.heap_trim=1
+    setprop dalvik.vm.heapgrowthlimit 128m
+    setprop dalvik.vm.heapsize 256m
+
+# lmkd low-memory-killer tuning. ro.* -> requires reboot (lmkd reads these at
+# its own start; the ro.* lock means a later ctl.restart lmkd alone will not
+# pick up a changed value within the same boot).
+on property:persist.gotweak.lmk=1
+    setprop ro.lmk.critical_upgrade true
+    setprop ro.lmk.upgrade_pressure 40
+    setprop ro.lmk.downgrade_pressure 60
+    setprop ro.lmk.kill_heaviest_task false
+
+# PackageManager dexopt tuning - not ro.*, applies at the next background
+# dexopt/idle-maintenance window, no reboot required.
+on property:persist.gotweak.dexopt=1
+    setprop pm.dexopt.downgrade_after_inactive_days 10
+    setprop pm.dexopt.shared quicken
+
+# GPU max-clock cap: kgsl-3d0 has 6 pwrlevels (index 0 = fastest), pwrlevel 3
+# = 375MHz vs the uncapped default's 475MHz ceiling (pwrlevel 0), confirmed
+# live on the DUT (available_frequencies: 475/450/400/375/300/216 MHz).
+# Plain sysfs write, not a property - applies live in both directions, no
+# reboot needed either way. This is the only gotweak that isn't reboot-gated.
+on property:persist.gotweak.gpu_clock_cap=1
+    write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 3
+
+on property:persist.gotweak.gpu_clock_cap=0
+    write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 0

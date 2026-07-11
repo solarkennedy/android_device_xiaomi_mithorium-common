@@ -39,6 +39,13 @@ persist.vendor.radio.mt_sms_ack=30
 persist.vendor.ssr.restart_level=ALL_ENABLE
 
 # USB
+# The persist.vendor.usb.config=adb seed in system.prop does NOT take effect —
+# a system build.prop cannot initialize a vendor-namespace persist prop, so on
+# a fresh userdata (persist store empty) the prop came up EMPTY and the gadget
+# HAL fell back to a mass_storage-only composition with no adb (observed on
+# the 2026-07-11 first boot: 05c6:f000 "Linux File-Stor Gadget", adb vanished
+# at boot-complete). Seed it from the vendor side, where the namespace matches.
+persist.vendor.usb.config=adb
 ro.usb.uvc.disable_video_encode_flag=true
 ro.usb.uvc.enabled=true
 sys.usb.mtp.batchcancel=1

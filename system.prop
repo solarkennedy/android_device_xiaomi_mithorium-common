@@ -174,5 +174,13 @@ persist.dbg.wfc_avail_ovr=1
 # RIL
 ro.telephony.block_binder_thread_on_incoming_calls=false
 
-# USB - default to ADB so usbd starts adbd on first boot
+# USB - default to ADB so usbd starts adbd on first boot.
+# BOTH sys and vendor seeds must be adb-only: with configfs=2 the gadget HAL
+# seeds the boot composition from persist.vendor.usb.config, and the stock
+# userdebug default (diag,serial_cdev,rmnet,dpl,adb) makes it try to bind
+# modem/IPA-backed USB functions (rmnet/dpl/diag). When the modem isn't ready
+# (boot, or an airplane toggle drops it) those functions fail to bind and the
+# whole gadget wedges → host "can't set config -71", ADB drops. We never use
+# USB diag/rmnet/dpl (on-device tools + adb only), so pin adb-only.
 persist.sys.usb.config=adb
+persist.vendor.usb.config=adb

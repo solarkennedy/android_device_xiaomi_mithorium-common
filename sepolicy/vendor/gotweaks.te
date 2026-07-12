@@ -31,3 +31,13 @@ allow vendor_init sysfs_kgsl:file rw_file_perms;
 # The actual sysfs_zram write is already covered: qti_init_shell already
 # writes comp_algorithm today for the ro.config.low_ram case.
 get_prop(qti_init_shell, gotweak_prop)
+
+# CPU cluster-saver toggle: init.gotweaks.rc writes the cpu0-3 online sysfs
+# nodes directly from an `on property:` trigger (vendor_init domain). The
+# base policy already grants every domain READ on this type
+# (system/sepolicy/private/domain.te's r_dir_file(domain, ...)), but not
+# write - the only existing write grants are for qti_init_shell and the
+# unrelated per-script vendor_init-qti-dcvs-sh domain, neither of which is
+# what runs our trigger. Checked before relying on one, same as the two
+# gotchas above.
+allow vendor_init sysfs_devices_system_cpu:file rw_file_perms;

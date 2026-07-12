@@ -47,3 +47,23 @@ on property:persist.gotweak.gpu_clock_cap=1
 
 on property:persist.gotweak.gpu_clock_cap=0
     write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 0
+
+# CPU cluster hotplug: cpu0-3 are the 1.4GHz cluster, cpu4-7 the ~1.1GHz one
+# (confirmed live on the DUT via scaling_max_freq). Offlining cpu0-3 forces
+# the device onto only its lower-clocked, lower-voltage cluster. Driven
+# automatically by GotweaksBatteryHook reacting to
+# PowerManager.isPowerSaveMode() - not a user-facing Pepito Tweaks toggle,
+# since the whole point is it follows the stock Battery Saver switch/tile
+# rather than needing its own. Plain sysfs writes, live in both directions,
+# no reboot needed.
+on property:persist.gotweak.cpu_cluster_saver=1
+    write /sys/devices/system/cpu/cpu1/online 0
+    write /sys/devices/system/cpu/cpu2/online 0
+    write /sys/devices/system/cpu/cpu3/online 0
+    write /sys/devices/system/cpu/cpu0/online 0
+
+on property:persist.gotweak.cpu_cluster_saver=0
+    write /sys/devices/system/cpu/cpu0/online 1
+    write /sys/devices/system/cpu/cpu1/online 1
+    write /sys/devices/system/cpu/cpu2/online 1
+    write /sys/devices/system/cpu/cpu3/online 1

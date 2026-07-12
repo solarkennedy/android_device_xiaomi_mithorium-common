@@ -27,6 +27,14 @@ import android.util.Log;
  * XiaomiParts already being android:persistent="true" to stay registered
  * for the whole uptime without a dedicated process of its own.
  *
+ * register() must use context.getApplicationContext(), not the Context
+ * BootCompletedReceiver.onReceive() was handed directly: a manifest-
+ * registered receiver's onReceive() gets a ReceiverRestrictedContext, which
+ * throws ReceiverCallNotAllowedException on any registerReceiver() call
+ * (caught on the 2026-07-11 validation flash - BootCompletedReceiver
+ * crashed, the hook never registered, so cpu_cluster_saver never followed
+ * Battery Saver at all).
+ *
  * The GPU lever is OR-composed at the init.rc layer with the independent
  * manual "Cap GPU clock" Pepito Tweaks toggle (persist.gotweak.gpu_clock_cap):
  * each has its own "turn on" trigger, and the "turn off" trigger only fires
@@ -53,14 +61,16 @@ public class GotweaksBatterySaverReceiver extends BroadcastReceiver {
             "persist.gotweak.battery_saver_hook";
 
     public static void register(Context context) {
-        final PowerManager pm = context.getSystemService(PowerManager.class);
+        final Context appContext = context.getApplicationContext();
+
+        final PowerManager pm = appContext.getSystemService(PowerManager.class);
         if (pm == null) {
             return;
         }
 
         apply(pm.isPowerSaveMode());
 
-        context.registerReceiver(new GotweaksBatterySaverReceiver(),
+        appContext.registerReceiver(new GotweaksBatterySaverReceiver(),
                 new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));
     }
 

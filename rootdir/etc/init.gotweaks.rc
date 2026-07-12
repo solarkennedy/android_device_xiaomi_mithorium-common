@@ -42,19 +42,33 @@ on property:persist.gotweak.dexopt=1
 # live on the DUT (available_frequencies: 475/450/400/375/300/216 MHz).
 # Plain sysfs write, not a property - applies live in both directions, no
 # reboot needed either way. This is the only gotweak that isn't reboot-gated.
+#
+# Two independent drivers can each want the cap on: the manual Pepito Tweaks
+# toggle (persist.gotweak.gpu_clock_cap) and the Battery Saver auto-hook
+# (persist.gotweak.battery_saver_gpu_cap, set by GotweaksBatterySaverReceiver
+# - see cpu_cluster_saver below). Each has its own "turn on" trigger, but
+# the "turn off" trigger requires BOTH to be 0 - an OR at the sysfs layer -
+# so Battery Saver toggling off doesn't clobber a standing manual preference,
+# and turning the manual toggle off doesn't undo an active Battery Saver cap.
 on property:persist.gotweak.gpu_clock_cap=1
     write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 3
 
-on property:persist.gotweak.gpu_clock_cap=0
+on property:persist.gotweak.battery_saver_gpu_cap=1
+    write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 3
+
+on property:persist.gotweak.gpu_clock_cap=0 && property:persist.gotweak.battery_saver_gpu_cap=0
     write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 0
 
 # CPU cluster hotplug: cpu0-3 are the 1.4GHz cluster, cpu4-7 the ~1.1GHz one
 # (confirmed live on the DUT via scaling_max_freq). Offlining cpu0-3 forces
 # the device onto only its lower-clocked, lower-voltage cluster. Driven
-# automatically by GotweaksBatteryHook reacting to
-# PowerManager.isPowerSaveMode() - not a user-facing Pepito Tweaks toggle,
-# since the whole point is it follows the stock Battery Saver switch/tile
-# rather than needing its own. Plain sysfs writes, live in both directions,
+# automatically by GotweaksBatterySaverReceiver reacting to
+# PowerManager.isPowerSaveMode() - not a user-facing Pepito Tweaks toggle
+# itself (persist.gotweak.battery_saver_hook is the on/off switch for the
+# whole mechanism, including the GPU cap above), since the whole point is it
+# follows the stock Battery Saver switch/tile rather than needing its own.
+# No manual/independent driver of this one (unlike the GPU cap above), so no
+# OR-composition needed here - plain sysfs writes, live in both directions,
 # no reboot needed.
 on property:persist.gotweak.cpu_cluster_saver=1
     write /sys/devices/system/cpu/cpu1/online 0

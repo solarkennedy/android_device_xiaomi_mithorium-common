@@ -1,0 +1,23 @@
+<!-- drawable/ic_life_mode.xml
+
+     The palm tree from the stock Palm PVG100. Traced from the stock 8.1
+     SystemUI's own QS tile asset (res/drawable-xhdpi-v4/ic_qs_lifemode_on.png,
+     65x79) rather than redrawn, so the silhouette is the real one.
+
+     Stock shipped two bitmaps, ic_qs_lifemode_on/off, as separate drawings in
+     coral and grey. We ship one monochrome vector instead and let the QS
+     framework tint it per tile state, which reproduces the same on/off read the
+     modern way - and, being a vector, survives this device's odd 264/280dpi
+     bucket that would have resampled a fixed-density bitmap.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="24dp"
+    android:width="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?android:attr/colorControlNormal" >
+    <path
+        android:fillColor="#000"
+        android:fillType="evenOdd"
+        android:pathData="M9.42,1.00L9.08,1.42L8.97,1.97L9.32,2.88L9.56,4.34L9.46,4.55L7.96,4.03L5.70,4.13L3.33,5.21L2.95,5.56L2.95,6.43L3.40,6.81L5.70,7.41L6.57,7.93L5.21,9.28L4.62,10.40L4.38,11.27L4.24,12.66L4.41,14.99L4.76,15.48L5.18,15.69L5.87,15.48L7.09,13.71L8.28,12.45L9.46,11.58L9.77,11.72L9.77,13.84L9.32,17.43L8.76,19.41L7.72,21.75L7.68,22.27L8.17,22.97L11.20,22.97L11.55,22.58L12.03,21.36L12.94,17.85L13.32,14.19L13.29,11.41L13.57,11.30L14.05,11.76L16.70,15.76L17.29,15.93L17.78,15.72L18.09,15.27L18.23,14.61L18.23,11.27L17.64,9.70L16.73,8.62L18.37,8.52L20.32,8.76L21.02,8.28L21.02,7.41L19.21,5.77L17.40,4.90L15.48,4.69L13.88,5.04L13.43,3.68L12.38,2.29L10.43,1.00ZM10.40,2.08L11.69,2.91L12.38,3.68L12.87,5.07L12.77,6.71L14.61,5.77L16.70,5.70L18.34,6.33L19.73,7.41L19.83,7.68L15.90,7.68L13.95,8.24L13.39,8.62L14.96,8.80L16.11,9.35L16.80,10.12L17.40,11.97L17.40,13.81L17.19,14.65L16.91,14.54L15.45,12.03L14.30,10.71L12.97,9.95L12.31,9.98L12.35,15.31L11.51,19.90L10.96,21.64L10.68,22.03L8.87,22.06L8.76,21.71L9.56,19.94L10.43,16.53L10.71,13.95L10.61,10.40L10.43,10.19L10.16,10.19L8.21,11.30L6.81,12.59L5.28,14.51L5.18,12.03L5.80,10.09L7.02,8.87L7.82,8.52L8.73,8.41L8.76,8.24L6.92,6.95L5.46,6.33L4.27,6.05L4.10,5.84L5.46,5.18L6.64,4.90L7.68,4.90L9.11,5.49L10.40,6.92L10.43,3.85L10.09,2.32L10.16,2.08Z" />
+</vector>

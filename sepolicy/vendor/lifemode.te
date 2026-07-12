@@ -1,0 +1,26 @@
+# Life Mode — the pepito screen-off "be present" feature (PLAN-lifemode.md).
+# Both writers are system_app (per seapp_contexts user=system+seinfo=platform):
+# the QS tile in XiaomiParts owns the master switch, the Pepito Tweaks screen
+# in LineageParts owns the behavior knobs.
+#
+# That is the whole policy surface. Unlike gotweaks, no vendor_init or
+# qti_init_shell grants are needed: there are no `on property:` triggers and no
+# sysfs writes behind these properties. Everything Life Mode does it does
+# through framework APIs (NotificationManager, NetworkPolicyManager,
+# WifiManager) from inside system_app, which the base policy already covers.
+get_prop(system_app, lifemode_prop)
+set_prop(system_app, lifemode_prop)
+
+# The pepito gate itself. LifeModeController.isSupported() reads
+# ro.vendor.xiaomi.device (labeled vendor_xiaomi_prop, declared vendor_public_prop
+# in property.te) to decide whether to enable the tile and register the screen
+# listener at all - and system_app had no read grant for it. Under Enforcing that
+# read is denied, SystemProperties.get() hands back "", isSupported() returns
+# false, and Life Mode silently switches itself off on the one device it is for:
+# no tile, no listener, no error anywhere except the avc line. Caught on the
+# 2026-07-12 validation flash.
+#
+# Same lesson as gotweak_prop's vendor_init grant next door: declaring a property
+# type public does NOT imply any given domain may read it. Every reader needs its
+# own get_prop.
+get_prop(system_app, vendor_xiaomi_prop)

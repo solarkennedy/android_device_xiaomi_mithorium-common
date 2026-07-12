@@ -24,6 +24,34 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Life Mode. All signature-level or normal, so the platform cert grants
+         them outright and no privapp-permissions allowlist entry is needed.
+         MANAGE_NETWORK_POLICY is signature (NetworkPolicyManager.setRestrictBackground);
+         WifiManager.setWifiEnabled() needs CHANGE_WIFI_STATE (normal) plus a
+         privileged caller, which we satisfy via the platform key itself
+         (WifiPermissionsUtil.isSignedWithPlatformKey).
+
+         PowerManager.setPowerSaveModeEnabled() takes DEVICE_POWER *or*
+         POWER_SAVER - deliberately DEVICE_POWER (signature|role), because
+         POWER_SAVER is signature|PRIVILEGED and would drag in the privapp
+         allowlist entry this app otherwise doesn't need. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.MANAGE_NETWORK_POLICY" />
+    <uses-permission android:name="android.permission.DEVICE_POWER" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Life Mode's GPS/Bluetooth levers. These two are the exception to the
+         "no allowlist needed" rule above and lean on sharedUserId=android.uid.system
+         instead: WRITE_SECURE_SETTINGS (LocationManager.setLocationEnabledForUser)
+         is signature|privileged, and BLUETOOTH_CONNECT (BluetoothAdapter.disable)
+         is a runtime permission that declaring alone does not grant. Sharing the
+         system UID is what carries both - the same way LineageParts holds
+         WRITE_SECURE_SETTINGS with no privapp entry of its own. Both call sites
+         are wrapped in SecurityException guards regardless; see LifeModeController. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 
     <application
@@ -57,6 +85,21 @@
             android:name=".doze.DozeService"
             android:permission="XiaomiDozeService"
             android:exported="true">
+        </service>
+
+        <!-- Life Mode's master switch. Disabled here so the tile never shows up
+             in the QS editor on the sibling Mi8937 variants; BootCompletedReceiver
+             enables it on pepito, where the feature belongs. -->
+        <service
+            android:name=".lifemode.LifeModeTile"
+            android:enabled="false"
+            android:label="@string/life_mode_tile_label"
+            android:icon="@drawable/ic_life_mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
         </service>
 
         <activity

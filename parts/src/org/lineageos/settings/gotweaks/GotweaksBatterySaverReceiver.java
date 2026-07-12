@@ -18,10 +18,16 @@ import android.util.Log;
  * (not a Pepito Tweaks entry itself - see PLAN-perf-battery.md) and, while
  * it's on, applies levers no stock Android battery saver reaches because
  * they're root-only - offlining the 1.4GHz cpu0-3 cluster
- * (persist.gotweak.cpu_cluster_saver) and capping the GPU clock
- * (persist.gotweak.battery_saver_gpu_cap). device/xiaomi/mithorium-common's
- * init.gotweaks.rc does the actual sysfs writes for both. Registered
- * dynamically from BootCompletedReceiver, since
+ * and/or capping the GPU clock, each independently gated by its own simple
+ * "participate in Battery Saver?" enable flag
+ * (persist.gotweak.battery_saver_cpu_enable /
+ * battery_saver_gpu_enable, both Pepito Tweaks toggles in LineageParts).
+ * device/xiaomi/mithorium-common's init.gotweaks.rc does the actual sysfs
+ * writes for both, driven purely by this receiver - neither
+ * persist.gotweak.cpu_cluster_saver nor persist.gotweak.gpu_clock_cap has
+ * any other driver, so there's no composition/conflict to worry about.
+ *
+ * Registered dynamically from BootCompletedReceiver, since
  * ACTION_POWER_SAVE_MODE_CHANGED "is only sent to registered receivers"
  * (PowerManager javadoc) - a manifest <receiver> can't catch it. Relies on
  * XiaomiParts already being android:persistent="true" to stay registered
@@ -35,30 +41,24 @@ import android.util.Log;
  * crashed, the hook never registered, so cpu_cluster_saver never followed
  * Battery Saver at all).
  *
- * The GPU lever is OR-composed at the init.rc layer with the independent
- * manual "Cap GPU clock" Pepito Tweaks toggle (persist.gotweak.gpu_clock_cap):
- * each has its own "turn on" trigger, and the "turn off" trigger only fires
- * when both are 0, so this hook toggling off never clobbers a standing
- * manual preference (and vice versa). The CPU cluster lever has no other
- * driver today, so it's a plain boolean with no such composition needed.
- *
- * The whole hook can be killed via persist.gotweak.battery_saver_hook
- * (default on) - a Pepito Tweaks toggle in LineageParts, since this is new,
- * unvalidated-on-device behavior. That toggle also directly recomputes and
- * sets both properties itself when flipped (see GoTweaksSettings.java) so
- * the effect reverses immediately instead of waiting for the next Battery
- * Saver change - the (hookEnabled && isPowerSaveMode()) check in apply()
- * below is duplicated there; keep both in sync if it ever changes.
+ * Each enable flag's toggle also directly recomputes and sets its
+ * corresponding output property itself when flipped (see
+ * GoTweaksSettings.java) so the effect reverses immediately instead of
+ * waiting for the next Battery Saver change - the
+ * (enabled && isPowerSaveMode()) check in apply() below is duplicated
+ * there per-lever; keep both in sync if it ever changes.
  */
 public class GotweaksBatterySaverReceiver extends BroadcastReceiver {
 
     private static final String TAG = "GotweaksBatterySaverReceiver";
     private static final String PROP_CPU_CLUSTER_SAVER =
             "persist.gotweak.cpu_cluster_saver";
-    private static final String PROP_GPU_CAP =
-            "persist.gotweak.battery_saver_gpu_cap";
-    private static final String PROP_HOOK_ENABLED =
-            "persist.gotweak.battery_saver_hook";
+    private static final String PROP_CPU_ENABLED =
+            "persist.gotweak.battery_saver_cpu_enable";
+    private static final String PROP_GPU_CLOCK_CAP =
+            "persist.gotweak.gpu_clock_cap";
+    private static final String PROP_GPU_ENABLED =
+            "persist.gotweak.battery_saver_gpu_enable";
 
     public static void register(Context context) {
         final Context appContext = context.getApplicationContext();
@@ -84,12 +84,14 @@ public class GotweaksBatterySaverReceiver extends BroadcastReceiver {
     }
 
     private static void apply(final boolean powerSaveMode) {
-        final boolean cap = SystemProperties.getBoolean(PROP_HOOK_ENABLED, true)
+        final boolean cpuCap = SystemProperties.getBoolean(PROP_CPU_ENABLED, true)
+                && powerSaveMode;
+        final boolean gpuCap = SystemProperties.getBoolean(PROP_GPU_ENABLED, false)
                 && powerSaveMode;
         Log.d(TAG, "Battery Saver " + (powerSaveMode ? "on" : "off")
-                + " - setting " + PROP_CPU_CLUSTER_SAVER + "/" + PROP_GPU_CAP
-                + "=" + (cap ? "1" : "0"));
-        SystemProperties.set(PROP_CPU_CLUSTER_SAVER, cap ? "1" : "0");
-        SystemProperties.set(PROP_GPU_CAP, cap ? "1" : "0");
+                + " - " + PROP_CPU_CLUSTER_SAVER + "=" + (cpuCap ? "1" : "0")
+                + " " + PROP_GPU_CLOCK_CAP + "=" + (gpuCap ? "1" : "0"));
+        SystemProperties.set(PROP_CPU_CLUSTER_SAVER, cpuCap ? "1" : "0");
+        SystemProperties.set(PROP_GPU_CLOCK_CAP, gpuCap ? "1" : "0");
     }
 }

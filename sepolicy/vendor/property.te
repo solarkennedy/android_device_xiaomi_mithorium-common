@@ -25,3 +25,10 @@ vendor_internal_prop(vendor_qmux_prop);
 # vendor-side init.gotweaks.rc trigger reads this system property fine -
 # only the *write* side needs system ownership.
 system_public_prop(gotweak_prop);
+
+# Life Mode (persist.lifemode.*, PLAN-lifemode.md). Same shape as gotweak_prop
+# and system-owned for the same reason - both writers (the QS tile in
+# XiaomiParts, the knobs in LineageParts) are system_app/coredomain. Nothing
+# vendor-side reads these: unlike gotweaks there are no init `on property:`
+# triggers, the properties are read straight from the app that acts on them.
+system_public_prop(lifemode_prop);

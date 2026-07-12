@@ -18,13 +18,17 @@
 package org.lineageos.settings;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import org.lineageos.settings.dirac.DiracUtils;
 import org.lineageos.settings.doze.DozeUtils;
 import org.lineageos.settings.gotweaks.GotweaksBatterySaverReceiver;
+import org.lineageos.settings.lifemode.LifeModeController;
+import org.lineageos.settings.lifemode.LifeModeTile;
 
 public class BootCompletedReceiver extends BroadcastReceiver {
 
@@ -39,5 +43,26 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         }
         new DiracUtils(context).onBootCompleted();
         GotweaksBatterySaverReceiver.register(context);
+
+        if (LifeModeController.isSupported()) {
+            setLifeModeTileEnabled(context);
+            LifeModeController.register(context);
+        }
+    }
+
+    /**
+     * The tile ships disabled (see AndroidManifest) so it stays out of the QS
+     * editor on the sibling variants, where Life Mode isn't a feature. Enable
+     * it here on pepito. DONT_KILL_APP: this is our own process.
+     */
+    private void setLifeModeTileEnabled(final Context context) {
+        final PackageManager pm = context.getPackageManager();
+        final ComponentName tile = new ComponentName(context, LifeModeTile.class);
+        if (pm.getComponentEnabledSetting(tile)
+                == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            return;
+        }
+        pm.setComponentEnabledSetting(tile, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
     }
 }

@@ -2,3 +2,11 @@ allow system_app fm_radio_device:chr_file r_file_perms;
 
 # Settings/telephony UI probes the QTI UCE (RCS presence) hwservice
 allow system_app hal_imsrcsd_hwservice:hwservice_manager find;
+
+# XiaomiParts (org.lineageos.settings, system UID → system_app) reads the
+# fuel-gauge cycle-count histogram from sysfs for its "Battery wear profile"
+# screen (/sys/class/power_supply/bms/cycle_counts, label sysfs_battery_supply).
+# Read-only battery telemetry — same label charger_led reads, and not the
+# generic `sysfs` type the untrusted-app neverallow guards.
+allow system_app sysfs_battery_supply:dir r_dir_perms;
+allow system_app sysfs_battery_supply:file r_file_perms;

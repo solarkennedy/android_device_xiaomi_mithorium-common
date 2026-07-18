@@ -61,4 +61,14 @@
 
     <!-- Life Mode -->
     <string name="life_mode_tile_label">Life Mode</string>
+
+    <!-- Battery wear profile -->
+    <string name="battery_wear_title">Battery wear profile</string>
+    <string name="battery_wear_summary">Charge cycles by battery level</string>
+    <string name="battery_wear_header_title">Charge cycle distribution</string>
+    <string name="battery_wear_header_summary">%1$d cycles at the most-charged level</string>
+    <!-- e.g. "0–12%" -->
+    <string name="battery_wear_band_fmt">%1$d–%2$d%%</string>
+    <string name="battery_wear_footer">The fuel gauge counts charge cycles separately for each battery-level band. Bands charged more often show more wear. Most charging near the top and little near the bottom means shallow, gentle cycling.</string>
+    <string name="battery_wear_unavailable">Cycle data unavailable</string>
 </resources>

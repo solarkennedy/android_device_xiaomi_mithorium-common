@@ -51,6 +51,9 @@
          are wrapped in SecurityException guards regardless; see LifeModeController. -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Greyscale (ColorDisplayManager.setSaturationLevel). Also signature|privileged,
+         also carried by the system UID rather than a privapp entry. -->
+    <uses-permission android:name="android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS" />
 
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 
@@ -110,6 +113,19 @@
                 <action android:name="org.lineageos.settings.device.DOZE_SETTINGS" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".batterywear.BatteryWearActivity"
+            android:exported="false"
+            android:label="@string/battery_wear_title">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+            </intent-filter>
+            <meta-data android:name="com.android.settings.category"
+                       android:value="com.android.settings.category.ia.system" />
+            <meta-data android:name="com.android.settings.summary"
+                       android:resource="@string/battery_wear_summary" />
         </activity>
 
     </application>

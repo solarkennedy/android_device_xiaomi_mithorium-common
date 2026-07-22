@@ -10,3 +10,17 @@ allow system_app hal_imsrcsd_hwservice:hwservice_manager find;
 # generic `sysfs` type the untrusted-app neverallow guards.
 allow system_app sysfs_battery_supply:dir r_dir_perms;
 allow system_app sysfs_battery_supply:file r_file_perms;
+
+# Settings (system_app) probes/lists GMS's private data directory during the
+# Accounts UI (account/sync management touches com.google.android.gms's own data
+# dir). Denial seen live under Enforcing 2026-07-18:
+#   avc: denied { search } for comm="ndroid.settings" name="com.google.android.gms"
+#     scontext=u:r:system_app:s0 tcontext=u:object_r:privapp_data_file:s0 tclass=dir
+# This CANNOT be allowed: system_app is an mlstrustedsubject (system_app.te:7) and
+# the neverallow in system/sepolicy/private/mlstrustedsubject.te (~L52) forbids
+# mlstrustedsubject (minus system_server/installd/adbd/runas/zygote/...) from
+# { read getattr search } on privapp_data_file:dir. (The earlier "appdomain, not
+# guarded" note was wrong — that grant fails the sepolicy_neverallows build check.)
+# The access is benign — account/sync mgmt goes through AccountManager/binder, not
+# the filesystem, and Contacts sync self-heals — so silence the log, don't grant.
+dontaudit system_app privapp_data_file:dir search;

@@ -483,8 +483,17 @@ PRODUCT_PACKAGES += \
 # USB
 PRODUCT_PACKAGES += \
     usb_compositions.conf \
-    android.hardware.usb@1.3-service.basic \
     android.hardware.usb.gadget-service.qti
+
+# USB port HAL. pepito (PVG100) has a WUSB3801 Type-C dual-role controller, and
+# the typec HAL was tried here to surface the "USB controlled by" role-swap
+# toggle -- but it (a) reported "couldn't switch" when actually toggled and
+# (b) coincided with a wired Android Auto regression: the car stopped sending
+# the AOA handshake (the connection just flaps connect/suspend/disconnect).
+# Reverted to the basic UFP stub 2026-07-17 pending root-cause. OTG host still
+# works autonomously via the PMIC/extcon path, so nothing hardware-facing is lost.
+PRODUCT_PACKAGES += \
+    android.hardware.usb@1.3-service.basic
 
 # Vibrator
 ifneq ($(TARGET_USES_DEVICE_SPECIFIC_VIBRATOR),true)

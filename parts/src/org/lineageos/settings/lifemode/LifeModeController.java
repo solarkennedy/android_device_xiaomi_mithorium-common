@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.display.ColorDisplayManager;
 import android.location.LocationManager;
 import android.net.NetworkPolicyManager;
 import android.net.wifi.WifiManager;
@@ -31,6 +32,10 @@ import android.util.Log;
  * halves beyond DND are opt-outable, and every knob is a persist.lifemode.*
  * property read fresh at each screen-off - so there is nothing to observe and
  * no state to keep in sync.
+ *
+ * Greyscale is the exception to all of that: it follows the MASTER SWITCH
+ * rather than the screen, because it is the one lever meant to be *seen*. See
+ * applyGrayscale().
  *
  * DND is always INTERRUPTION_FILTER_PRIORITY, never _NONE: starred contacts
  * and repeat callers still break through, which is what makes it safe to
@@ -88,12 +93,18 @@ public final class LifeModeController extends BroadcastReceiver {
     public static final String PROP_WIFI_OFF = "persist.lifemode.wifi_off";
     public static final String PROP_GPS_OFF = "persist.lifemode.gps_off";
     public static final String PROP_BT_OFF = "persist.lifemode.bt_off";
+    public static final String PROP_GRAYSCALE = "persist.lifemode.grayscale";
 
     public static final boolean DEFAULT_RESTRICT_DATA = true;
     public static final boolean DEFAULT_BATTERY_SAVER = true;
     public static final boolean DEFAULT_WIFI_OFF = false;
     public static final boolean DEFAULT_GPS_OFF = false;
     public static final boolean DEFAULT_BT_OFF = false;
+    public static final boolean DEFAULT_GRAYSCALE = true;
+
+    /** ColorDisplayManager saturation levels: 0 = greyscale, 100 = normal. */
+    private static final int SATURATION_GRAYSCALE = 0;
+    private static final int SATURATION_FULL = 100;
 
     /** Live state + the snapshot to undo it, persisted so a reboot can't strand us. */
     private static final String PROP_ACTIVE = "persist.lifemode.active";
@@ -123,6 +134,11 @@ public final class LifeModeController extends BroadcastReceiver {
         // before anything else. No-op in the normal case.
         restore(appContext);
 
+        // Greyscale is the one lever that is NOT persistent system state - it's a
+        // runtime colour transform, so a reboot silently drops it. Re-assert it
+        // here if Life Mode is still on.
+        applyGrayscale(appContext);
+
         final IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
@@ -134,6 +150,40 @@ public final class LifeModeController extends BroadcastReceiver {
         SystemProperties.set(PROP_ENABLED, enabled ? "1" : "0");
         if (!enabled) {
             restore(context.getApplicationContext());
+        }
+        applyGrayscale(context.getApplicationContext());
+    }
+
+    /**
+     * Greyscale follows the MASTER SWITCH, not the screen - it is the one lever
+     * here that is meant to be seen. Grey while Life Mode is on, colour when it's
+     * off; the point is that picking the phone up is deliberately less rewarding,
+     * which is Digital Wellbeing's Bedtime Mode behavior (GMS-only, so we drive it
+     * ourselves). Applying it on screen-off like everything else would be pointless
+     * - nobody is looking.
+     *
+     * Deliberately NOT the accessibility daltonizer's Monochromacy mode, which is
+     * the other way to grey the screen: that's colour-correction, and commandeering
+     * it would stomp on a user who actually needs it. ColorDisplayManager's global
+     * saturation is the orthogonal knob.
+     *
+     * Also the only lever that needs no snapshot: saturation is a runtime transform
+     * with a known default (100), not persistent system state, so there is nothing
+     * to strand and nothing to put back - worst case a reboot resets it to colour
+     * on its own, which register() then corrects.
+     */
+    private static void applyGrayscale(final Context context) {
+        final ColorDisplayManager cdm =
+                context.getSystemService(ColorDisplayManager.class);
+        if (cdm == null) {
+            return;
+        }
+        final boolean grey = isEnabled()
+                && SystemProperties.getBoolean(PROP_GRAYSCALE, DEFAULT_GRAYSCALE);
+        try {
+            cdm.setSaturationLevel(grey ? SATURATION_GRAYSCALE : SATURATION_FULL);
+        } catch (SecurityException e) {
+            Log.w(TAG, "cannot set saturation: " + e.getMessage());
         }
     }
 

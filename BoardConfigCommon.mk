@@ -33,11 +33,19 @@ BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery printk.dev
 # Serial console (BLSP1_UART1 @ 0x78b0000 on MSM8940). Without console=/earlycon=
 # the 4.19 kernel is silent until late driver init, masking early panics during
 # bring-up. msm_serial driver registers as ttyMSM0.
+#
+# Bench-only: release builds ship quiet. The console UART is an exposed physical
+# test point, and this block hands anyone who can reach it the full kernel log
+# (ignore_loglevel) plus the unmasked SysRq command set (reboot, crash, task
+# dumps, memory info) via serial break. Defconfig alone would cap SysRq at
+# CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x1 (loglevel only); sysrq_always_enabled=1
+# is what opens the debug commands, so both live behind the same switch.
+#
+# Enable for a bring-up/bench build with:  PEPITO_SERIAL_CONSOLE=true m ...
+ifeq ($(PEPITO_SERIAL_CONSOLE),true)
 BOARD_KERNEL_CMDLINE += console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0x78b0000 ignore_loglevel printk.time=1
-# Force SysRq mask all-on for serial-break-triggered debug dumps. Defconfig
-# sets CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x1 which only enables loglevel
-# (0-9), not debug commands (t/l/w/h). This boot param overrides at runtime.
 BOARD_KERNEL_CMDLINE += sysrq_always_enabled=1
+endif
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 BOARD_KERNEL_PAGESIZE :=  2048
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100

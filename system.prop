@@ -174,13 +174,19 @@ persist.dbg.wfc_avail_ovr=1
 # RIL
 ro.telephony.block_binder_thread_on_incoming_calls=false
 
-# USB - default to ADB so usbd starts adbd on first boot.
-# BOTH sys and vendor seeds must be adb-only: with configfs=2 the gadget HAL
-# seeds the boot composition from persist.vendor.usb.config, and the stock
-# userdebug default (diag,serial_cdev,rmnet,dpl,adb) makes it try to bind
-# modem/IPA-backed USB functions (rmnet/dpl/diag). When the modem isn't ready
-# (boot, or an airplane toggle drops it) those functions fail to bind and the
-# whole gadget wedges → host "can't set config -71", ADB drops. We never use
-# USB diag/rmnet/dpl (on-device tools + adb only), so pin adb-only.
+# USB - seed the AOSP-side boot composition as adb-only so usbd starts adbd on
+# first boot. This is only the framework/init default at boot; it does NOT pin
+# the gadget. The framework switches composition at runtime through the AIDL
+# gadget HAL, which drives configfs directly and never writes sys.usb.config —
+# so this prop reading "adb" is not evidence of the current composition.
+# Verified 2026-07-22: File Transfer still works (HAL binds mtp,adb, 18d1:4ee2,
+# "GADGET pulled up"), as do PTP/MIDI/tethering.
+#
+# The modem-wedge fix is NOT this prop — see persist.vendor.usb.config in
+# vendor.prop. Only init.qcom.usb.sh reads that one, and only when it is empty,
+# in which case it seeds diag,serial_cdev,rmnet,dpl,adb; those IPA/modem-backed
+# functions fail to bind when the modem isn't ready and wedge the whole gadget
+# ("can't set config -71", ADB drops). It must be seeded from the vendor
+# partition — a system build.prop cannot initialize a vendor-namespace persist
+# prop, which is why the duplicate that used to sit here was dead code.
 persist.sys.usb.config=adb
-persist.vendor.usb.config=adb

@@ -67,6 +67,12 @@ on post-fs-data
     mkdir /persist/data/tz 0700 system system
     mkdir /data/vendor/hbtp 0750 system system
     mkdir /data/misc/dts 0770 media audio
+    # BHI160B: the BST BHy HAL (sensors.native.so) stores its per-sensor
+    # calibration profiles here and hardcodes the path. Without this dir it
+    # logs "open file /data/misc/sensor/bhy_profile_calib_* failed" every
+    # activate/deactivate and calibration never persists. Stock creates it
+    # in the same spot (init.target.rc, "#add for BHI160").
+    mkdir /data/misc/sensor 0770 system system
 
 on early-boot
     chown system system /mnt/vendor/persist/sensors

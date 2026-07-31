@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
 Build a Palm PVG-100 (pepito) boot/recovery partition image that boots GREEN.
 

@@ -50,6 +50,12 @@ BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 BOARD_KERNEL_PAGESIZE :=  2048
 BOARD_MKBOOTIMG_ARGS := --ramdisk_offset 0x01000000 --tags_offset 0x00000100
 TARGET_KERNEL_SOURCE := kernel/xiaomi/msm8937
+
+# pepito: graft the VB1.0 fail-open signature onto boot.img AND recovery.img in
+# the build (see custom_bootimg.mk), so the OTA-shipped boot image is actually
+# bootable on this device instead of unsigned. Only pepito is built from this
+# fork; the graft uses Palm's cert and must not reach siblings.
+BOARD_CUSTOM_BOOTIMG_MK := device/xiaomi/mithorium-common/custom_bootimg.mk
 TARGET_KERNEL_VERSION := 4.19
 KERNEL_BUILD_OUT_PREFIX := $(BUILD_TOP)/
 

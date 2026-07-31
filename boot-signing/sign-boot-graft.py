@@ -96,8 +96,9 @@ import struct
 import sys
 from pathlib import Path
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.x509 import load_der_x509_certificate
+# stdlib only (hashlib above) — this runs under the build's hermetic python3,
+# which has no third-party modules like `cryptography`. A cert's SHA-256
+# fingerprint is just sha256 of its DER bytes, so we don't need an X.509 parser.
 
 PARTITION_SIZE = 0x4000000   # 64 MB boot partition
 ID_OFFSET      = 0x240       # 20-byte mkbootimg SHA1 id
@@ -265,10 +266,11 @@ def self_check(partition: bytes, img_size: int, target: str) -> str:
     assert not any(sig_block[len(expected):]), 'non-zero bytes in padding'
 
     # Cert must sit exactly where a parser would look (2nd element, after the
-    # 3-byte version INTEGER) and be the stock TCL cert.
+    # 3-byte version INTEGER) and be the stock TCL cert. A cert's SHA-256
+    # fingerprint == sha256 of its DER bytes, so no X.509 parser is needed.
     c0 = 4 + 3
-    cert = load_der_x509_certificate(sig_block[c0:c0 + der_tlv_len(sig_block, c0)])
-    fp = cert.fingerprint(hashes.SHA256()).hex(':').upper()
+    cert_der = sig_block[c0:c0 + der_tlv_len(sig_block, c0)]
+    fp = ':'.join('%02X' % b for b in hashlib.sha256(cert_der).digest())
     assert fp == STOCK_CERT_SHA256, f'embedded cert fingerprint mismatch: {fp}'
     return fp
 
@@ -294,8 +296,6 @@ def main():
         tree = find_tree_root()
         args.src  = args.src  or tree / 'flash-staging/boot_unsigned.img'
         args.dest = args.dest or tree / 'flash-staging/boot.bin'
-
-    stock_cert = load_der_x509_certificate(STOCK_CERT_DER)  # for reporting
 
     img = bytearray(args.src.read_bytes())
     assert img[:8] == b'ANDROID!', 'not an Android boot image'
@@ -325,9 +325,7 @@ def main():
     fp = self_check(partition, img_size, args.target)
 
     args.dest.write_bytes(partition)
-    print(f'graft       = stock TCL cert ({len(STOCK_CERT_DER)}B) + stock sig (256B), embedded verbatim')
-    print(f'subject     = {stock_cert.subject.rfc4514_string()}')
-    print(f'expires     = {stock_cert.not_valid_after:%Y-%m-%d}')
+    print(f'graft       = stock TCL "TCLMOBILE" cert ({len(STOCK_CERT_DER)}B, expires 2045-04-17) + stock sig (256B), embedded verbatim')
     print(f'id          = {img_id.hex()}')
     print(f'os_version  = {STOCK_OSVER.hex()}')
     print(f'img_size    = {hex(img_size)}')

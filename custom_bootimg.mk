@@ -24,6 +24,14 @@
 
 PEPITO_BOOT_GRAFT := device/xiaomi/mithorium-common/boot-signing/sign-boot-graft.py
 
+# The boot.img -> kernel dependency normally comes from an add-dependency call in
+# core/Makefile that is itself gated behind `ifndef BOARD_CUSTOM_BOOTIMG_MK`, so
+# setting the hook drops it and the recipe races the kernel build (mkbootimg then
+# fails: can't open .../kernel). The kernel is passed via --kernel in the recipe,
+# not INTERNAL_BOOTIMAGE_ARGS, so it isn't in INTERNAL_BOOTIMAGE_FILES either.
+# Re-add it exactly as core/Makefile does.
+$(foreach b,$(INSTALLED_BOOTIMAGE_TARGET),$(eval $(call add-dependency,$(b),$(call bootimage-to-kernel,$(b)))))
+
 # ---- boot.img ----
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image (grafted): $@")

@@ -137,13 +137,14 @@ BOARD_ROOT_EXTRA_SYMLINKS := \
 # Palm's stock sensor daemon (sensors.qti) rejects /persist when it
 # canonicalizes through the symlink to /mnt/vendor/persist; pepito needs a
 # real /persist dir bind-mounted to the persist partition (init.target.rc).
-# ⚠ BOARD_ROOT_EXTRA_SYMLINKS has NO consumer in the A16 build system — this
-# whole block (like the dsp/firmware lines above) is inert, and the $OUT/root
-# staging artifacts from older builds ship verbatim instead. The real
-# mechanism for the pepito /persist dir is scripts/build-lineage23.sh, which
-# fixes up $OUT/root/persist before every image build. Kept for documentation
-# and in case the build system ever honors it again. (2026-07-10,
-# PLAN-sensors.md.)
+# BOARD_ROOT_EXTRA_SYMLINKS IS consumed by system/core/rootdir/
+# create_root_structure.mk (the 2026-07-10 "no consumer" finding no longer
+# holds — the shipped image carries the dsp/firmware symlinks from the list
+# above). The gate below keeps the symlink OFF for pepito; its real dir comes
+# from BOARD_ROOT_EXTRA_FOLDERS += persist in Mi8937/BoardConfig.mk (the
+# pre-build $OUT/root fixup in scripts/build-lineage23.sh proved racy — a
+# root-staging regeneration dropped it from the 2026-07-30 build).
+# (PLAN-sensors.md.)
 ifneq ($(TARGET_DEVICE_PEPITO),true)
 BOARD_ROOT_EXTRA_SYMLINKS += \
     /mnt/vendor/persist:/persist

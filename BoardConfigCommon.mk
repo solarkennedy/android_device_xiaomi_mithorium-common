@@ -55,7 +55,19 @@ TARGET_KERNEL_SOURCE := kernel/xiaomi/msm8937
 # the build (see custom_bootimg.mk), so the OTA-shipped boot image is actually
 # bootable on this device instead of unsigned. Only pepito is built from this
 # fork; the graft uses Palm's cert and must not reach siblings.
+#
+# TWO variables are needed and easy to confuse:
+#   BOARD_CUSTOM_BOOTIMG_MK  — replaces the boot/recovery *recipe* (grafts the
+#                              images in $OUT; this is what EDL flashes).
+#   BOARD_CUSTOM_BOOTIMG     — copies those grafted images into the target-files
+#                              BOOTABLE_IMAGES/, so ota_from_target_files uses
+#                              them as prebuilts (GetBootableImage checks
+#                              BOOTABLE_IMAGES first) instead of REBUILDING boot
+#                              from BOOT/ unsigned. Without it the OTA ships an
+#                              unsigned boot that bricks at PALM even though EDL
+#                              works — both are required.
 BOARD_CUSTOM_BOOTIMG_MK := device/xiaomi/mithorium-common/custom_bootimg.mk
+BOARD_CUSTOM_BOOTIMG := true
 TARGET_KERNEL_VERSION := 4.19
 KERNEL_BUILD_OUT_PREFIX := $(BUILD_TOP)/
 

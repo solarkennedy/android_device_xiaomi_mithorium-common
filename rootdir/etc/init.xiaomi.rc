@@ -133,8 +133,14 @@ on property:sys.boot_completed=1 && property:vendor.usb.uvc.function.init=1
     rm /config/usb_gadget/g1/functions/uvc.0/streaming/header/h/u
     rm /config/usb_gadget/g1/functions/uvc.0/streaming/header/h1/u1
 
-    rmdir /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/720p
-    #rmdir /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/1080p
+    # Advertise only what the pipeline delivers: the camera feeds 30 fps and
+    # DeviceAsWebcam encodes MJPEG in software, so drop the 60 fps (166666)
+    # interval from every frame; keep 360p/720p/1080p and default hosts to
+    # 720p30 (bFrameIndex 2 by creation order) — the encoder's sweet spot.
+    write /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/360p/dwFrameInterval 333333\n666666\n1000000\n5000000\n
+    write /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/720p/dwFrameInterval 333333\n666666\n1000000\n5000000\n
+    write /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/1080p/dwFrameInterval 333333\n666666\n1000000\n5000000\n
+    write /config/usb_gadget/g1/functions/uvc.0/streaming/mjpeg/m1/bDefaultFrameIndex 2
 
     symlink /config/usb_gadget/g1/functions/uvc.0/streaming/header/h1 /config/usb_gadget/g1/functions/uvc.0/streaming/class/fs/h1
     symlink /config/usb_gadget/g1/functions/uvc.0/streaming/header/h1 /config/usb_gadget/g1/functions/uvc.0/streaming/class/hs/h1

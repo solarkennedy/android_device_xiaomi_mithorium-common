@@ -176,6 +176,19 @@ PRODUCT_PACKAGES += \
 
 $(call soong_config_set_bool,surfaceflinger,register_displayservice,true)
 
+# Neuter SDM's MDP-idle fallback timer. The legacy fb-backend idle design
+# (kernel idle_notify -> SDM -> refresh callback -> SF re-validates to GPU
+# composition) is broken under modern SurfaceFlinger: SF's response frame
+# re-arms the kernel idle timer, producing a self-sustaining ~10-14 Hz
+# notify/refresh loop the whole time the screen is on, and the GPU fallback
+# never actually engages. 0 does NOT disable it (SDM then leaves the kernel
+# default of 100 ms); a huge value effectively does (one benign cycle per ~66
+# min of static screen). Verified live on pepito: storm gone, DEVICE (MDP
+# overlay) composition intact.
+PRODUCT_VENDOR_PROPERTIES += \
+    vendor.display.idle_time=4000000 \
+    vendor.display.idle_time_inactive=4000000
+
 # DRM
 PRODUCT_PACKAGES += \
     android.hardware.drm-service.clearkey \

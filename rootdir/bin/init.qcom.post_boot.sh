@@ -840,16 +840,23 @@ function configure_zram_parameters() {
     # gotweaks (PLAN-perf-battery.md): persist.gotweak.zram_zstd selects
     # zstd instead of lz4 - better compression ratio (more effective swap
     # capacity for the same disksize) at the cost of more CPU per page
-    # (de)compression. Default ON (unset counts as on; GoTweaksSettings'
-    # toggle default must stay in sync) - the ratio win is the right trade
-    # on these low-RAM devices. Must be set before disksize/mkswap/swapon
-    # below, and only takes effect on the next full boot (comp_algorithm
-    # can't be changed once zram is live and already acting as swap).
+    # (de)compression. Default OFF since 2026-08-22 (unset counts as off;
+    # GoTweaksSettings' toggle default must stay in sync): A/B on Gold
+    # showed zstd's slower swap-out spikes memory PSI enough that lmkd
+    # kills backgrounded apps under pressure that lz4 rides out as plain
+    # swap (Settings resume after a ~1GB hog: lz4 HOT 558-766ms vs zstd
+    # COLD-killed 1276-2279ms), and zstd swap-ins land squarely on the
+    # first-touch-after-idle latency path. Must be set before
+    # disksize/mkswap/swapon below, and only takes effect on the next
+    # full boot (comp_algorithm can't be changed once zram is live and
+    # already acting as swap). The else branch is unconditional (not
+    # gated on low_ram): the kernel default is lzo, so skipping the
+    # write would silently select lzo, not lz4.
     zram_zstd=`getprop persist.gotweak.zram_zstd`
 
-    if [ "$zram_zstd" != "0" ]; then
+    if [ "$zram_zstd" == "1" ]; then
         echo zstd > /sys/block/zram0/comp_algorithm
-    elif [ "$low_ram" == "true" ]; then
+    else
         echo lz4 > /sys/block/zram0/comp_algorithm
     fi
 

@@ -62,7 +62,12 @@ on property:persist.gotweak.gpu_clock_cap=0
 # Screen-on idle cost below measurement noise: min_pwrlevel only applies
 # while the GPU is powered at all, so a static screen still power-collapses
 # to zero. The real cost case is sustained light GPU load (video playback
-# composition held at 375 instead of 216MHz) - hence a toggle, default off.
+# composition held at 375 instead of 216MHz in principle - though gpubusy
+# sampling on Gold showed the GPU fully collapsed during video playback too,
+# MDP overlays own that path). Default ON via build-prop default in
+# mithorium.mk (persist.gotweak.gpu_perf_floor=1; GoTweaksSettings' default
+# must stay in sync) - a persisted user "0" overrides it from the moment
+# persist props load.
 # Floor ONLY - stretching idle_timer added nothing to frames in the same
 # A/B, so it stays at its default. Coexists with gpu_clock_cap=1: min=max=
 # pwrlevel 3, kgsl handles that fine (GPU pinned at 375MHz).

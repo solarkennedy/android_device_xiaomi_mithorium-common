@@ -392,6 +392,18 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/sec_config:$(TARGET_COPY_OUT_VENDOR)/etc/sec_config
 
+# GoTweaks defaults (rootdir/etc/init.gotweaks.rc). Build-prop default for a
+# persist prop: getprop returns this value until the user's own write is
+# persisted, and the user's value wins afterwards - unlike an `on boot` write,
+# which would fire after property-trigger registration and stomp a persisted
+# "0" every boot. GPU perf floor default ON: Gold bench 2026-08-22 showed a
+# repeatable ~30% worst-scroll-frame cut, and gpubusy sampling confirmed the
+# GPU still fully power-collapses on static screens AND during video playback
+# (MDP overlay composition) - so the floor only ever applies while the GPU is
+# actively rendering interactive frames, exactly where the win is.
+PRODUCT_VENDOR_PROPERTIES += \
+    persist.gotweak.gpu_perf_floor=1
+
 # Ramdisk
 PRODUCT_PACKAGES += \
     fstab.qcom \

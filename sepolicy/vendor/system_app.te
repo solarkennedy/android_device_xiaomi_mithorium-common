@@ -5,11 +5,13 @@ allow system_app hal_imsrcsd_hwservice:hwservice_manager find;
 
 # XiaomiParts (org.lineageos.settings, system UID → system_app) reads the
 # fuel-gauge cycle-count histogram from sysfs for its "Battery wear profile"
-# screen (/sys/class/power_supply/bms/cycle_counts, label sysfs_battery_supply).
-# Read-only battery telemetry — same label charger_led reads, and not the
-# generic `sysfs` type the untrusted-app neverallow guards.
+# screen (/sys/class/power_supply/bms/cycle_counts, label sysfs_battery_supply),
+# and writes 0 to the same node for the screen's confirmed "Reset wear data"
+# button (post-battery-swap reset; ueventd chowns the node system:system).
+# Not the generic `sysfs` type, and the sysfs write neverallows
+# (app_neverallows.te) guard all_untrusted_apps only — system_app is exempt.
 allow system_app sysfs_battery_supply:dir r_dir_perms;
-allow system_app sysfs_battery_supply:file r_file_perms;
+allow system_app sysfs_battery_supply:file rw_file_perms;
 
 # Settings (system_app) probes/lists GMS's private data directory during the
 # Accounts UI (account/sync management touches com.google.android.gms's own data

@@ -71,4 +71,11 @@
     <string name="battery_wear_band_fmt">%1$d–%2$d%%</string>
     <string name="battery_wear_footer">The fuel gauge counts charge cycles separately for each battery-level band. Bands charged more often show more wear. Most charging near the top and little near the bottom means shallow, gentle cycling.</string>
     <string name="battery_wear_unavailable">Cycle data unavailable</string>
+    <string name="battery_wear_reset_title">Reset wear data</string>
+    <string name="battery_wear_reset_summary">Clear the cycle history after a battery replacement</string>
+    <string name="battery_wear_reset_dialog_title">Reset battery wear data?</string>
+    <string name="battery_wear_reset_dialog_message">This permanently erases the charge-cycle history and learned battery capacity. Only do this after installing a new battery — the new battery\'s health will be tracked from scratch.</string>
+    <string name="battery_wear_reset_confirm">Reset</string>
+    <string name="battery_wear_reset_done">Battery wear data reset</string>
+    <string name="battery_wear_reset_failed">Reset failed</string>
 </resources>

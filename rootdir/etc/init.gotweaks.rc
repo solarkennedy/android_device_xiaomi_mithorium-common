@@ -54,6 +54,24 @@ on property:persist.gotweak.gpu_clock_cap=1
 on property:persist.gotweak.gpu_clock_cap=0
     write /sys/class/kgsl/kgsl-3d0/max_pwrlevel 0
 
+# GPU min-clock floor (speed-for-battery, the inverse of the cap above):
+# pwrlevel 3 = 375MHz floor vs the default floor of pwrlevel 5 (216MHz).
+# Benched on Gold 2026-08-22 (interleaved A/B x5, perfectly repeatable):
+# Settings-scroll worst frames 99th 31->25ms, GPU 90th/99th 21-22->15-16ms
+# (~30% cut) - the ramp-from-216MHz cost on the first frames of every burst.
+# Screen-on idle cost below measurement noise: min_pwrlevel only applies
+# while the GPU is powered at all, so a static screen still power-collapses
+# to zero. The real cost case is sustained light GPU load (video playback
+# composition held at 375 instead of 216MHz) - hence a toggle, default off.
+# Floor ONLY - stretching idle_timer added nothing to frames in the same
+# A/B, so it stays at its default. Coexists with gpu_clock_cap=1: min=max=
+# pwrlevel 3, kgsl handles that fine (GPU pinned at 375MHz).
+on property:persist.gotweak.gpu_perf_floor=1
+    write /sys/class/kgsl/kgsl-3d0/min_pwrlevel 3
+
+on property:persist.gotweak.gpu_perf_floor=0
+    write /sys/class/kgsl/kgsl-3d0/min_pwrlevel 5
+
 # CPU cluster hotplug: cpu0-3 are the 1.4GHz cluster, cpu4-7 the ~1.1GHz one
 # (confirmed live on the DUT via scaling_max_freq). Offlining cpu1-3 pushes
 # most load onto the lower-clocked, lower-voltage cluster. cpu0 must stay

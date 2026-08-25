@@ -45,7 +45,8 @@ ro.vendor.xiaomi.	u:object_r:vendor_xiaomi_prop:s0
 persist.vendor.qmux.	u:object_r:vendor_qmux_prop:s0
 ro.vendor.qmux.	u:object_r:vendor_qmux_prop:s0
 # vendor.qmux.ims_enabler = status of the VoLTE NV self-heal oneshot
-# (ok | applied | failed | off), set by ims_enabler each boot.
+# (ok | applied | failed | off), set by ims_enabler each boot + SIM load.
+# vendor.qmux.ims_msisdn  = its MSISDN phase (kept | set | pending | failed).
 # vendor.qmux.wfc_bridge   = status of the VoWiFi WLAN feeder.
 # vendor.qmux.wfc_efswrite = status of the VoWiFi ps_sys field-4 EFS oneshot
 # (ok | applied | error | off), set on the WFC toggle (PLAN-vowifi.md pt 44-47).

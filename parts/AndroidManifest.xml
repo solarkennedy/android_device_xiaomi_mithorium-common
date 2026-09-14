@@ -133,6 +133,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Battery wear profile. Injected into Settings > Battery rather than System:
+             CategoryKey.CATEGORY_BATTERY is hosted by PowerUsageSummary, which is a
+             DashboardFragment, so it picks up injected tiles the same way the System
+             dashboard does. It sat under System only because that was the category it
+             was first given; nothing about it belongs there.
+
+             No com.android.settings.icon on purpose: nothing else on the Battery page
+             carries one (Battery usage, Battery Saver, Charging control and the rest
+             are all flush left), so an icon here would make this the odd row out. It
+             needed one under System, where every row has an icon and a tile without
+             one renders with no icon gutter at all - the move is what made it moot.
+             res/drawable/ic_battery_wear.xml is kept for if this ever moves back. -->
         <activity
             android:name=".batterywear.BatteryWearActivity"
             android:exported="false"
@@ -141,7 +153,7 @@
                 <action android:name="com.android.settings.action.IA_SETTINGS" />
             </intent-filter>
             <meta-data android:name="com.android.settings.category"
-                       android:value="com.android.settings.category.ia.system" />
+                       android:value="com.android.settings.category.ia.battery" />
             <meta-data android:name="com.android.settings.summary"
                        android:resource="@string/battery_wear_summary" />
         </activity>

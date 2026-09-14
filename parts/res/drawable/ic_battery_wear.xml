@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- drawable/ic_battery_wear.xml
+
+     Battery wear profile: a battery holding the screen's own chart.
+
+     Currently UNREFERENCED. It was drawn for the Settings row while that row sat
+     under System, where a tile with no icon renders with no icon gutter at all
+     and its title breaks the page's alignment. Moving the row to Battery - where
+     no row has an icon - made it unnecessary. Kept for if it ever moves back.
+
+     The three bars are the "Charge cycle distribution" the activity actually
+     draws - horizontal pills, left-aligned, growing towards the bottom, matching
+     the real shape of the data (this device charges mostly from a high state of
+     charge, so the bottom buckets are the long ones). A plain battery would have
+     said nothing the row's title doesn't already say.
+
+     Body outer (6,4)-(18,22) r=2 with a 1.5 stroke, so the cavity is
+     (7.5,5.5)-(16.5,20.5) and the bars sit 0.75 clear of it; the cap overlaps
+     into the body's top stroke so the two union cleanly rather than seaming.
+     Inner corners r=1 against the outer r=2 to stay concentric.
+
+     Beware the straight runs: a rounded rect's edge must stop a RADIUS short of
+     the corner (inner left edge x=7.5 means the bottom run ends at 8.5, not 7.5).
+     Getting that wrong silently narrows the stroke on two sides only - it cost a
+     round here, and the check is to scan the rendered bitmap rather than trust
+     the path: at y=13 the sides must measure 6.0-7.5 and 16.5-18.0.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?android:attr/colorControlNormal">
+
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M15.5,20.5H8.5a1,1 0 0,1 -1,-1V6.5a1,1 0 0,1 1,-1h7a1,1 0 0,1 1,1v13a1,1 0 0,1 -1,1ZM16,4H8a2,2 0 0,0 -2,2V20a2,2 0 0,0 2,2h8a2,2 0 0,0 2,-2V6a2,2 0 0,0 -2,-2Z" />
+
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M11,2H13a1,1 0 0,1 1,1V4.5H10V3a1,1 0 0,1 1,-1Z" />
+
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M9.35,7.70H10.65a1.10,1.10 0 0,1 0,2.20H9.35a1.10,1.10 0 0,1 0,-2.20ZM9.35,11.90H12.15a1.10,1.10 0 0,1 0,2.20H9.35a1.10,1.10 0 0,1 0,-2.20ZM9.35,16.10H14.15a1.10,1.10 0 0,1 0,2.20H9.35a1.10,1.10 0 0,1 0,-2.20Z" />
+</vector>

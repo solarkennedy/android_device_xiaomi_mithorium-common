@@ -105,6 +105,24 @@
             </intent-filter>
         </service>
 
+        <!-- Long-press target for the Life Mode tile; trampolines into LineageParts'
+             Life Mode screen. Exported because SystemUI starts it. Disabled here for
+             the same reason the tile is, and enabled alongside it on pepito by
+             BootCompletedReceiver - SystemUI resolves the long-press intent with
+             flags 0, so while disabled it correctly does not resolve. -->
+        <activity
+            android:name=".lifemode.LifeModeSettingsActivity"
+            android:enabled="false"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/life_mode_tile_label"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".doze.DozeSettingsActivity"
             android:exported="false"

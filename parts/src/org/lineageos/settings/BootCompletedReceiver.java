@@ -28,6 +28,7 @@ import org.lineageos.settings.dirac.DiracUtils;
 import org.lineageos.settings.doze.DozeUtils;
 import org.lineageos.settings.gotweaks.GotweaksBatterySaverReceiver;
 import org.lineageos.settings.lifemode.LifeModeController;
+import org.lineageos.settings.lifemode.LifeModeSettingsActivity;
 import org.lineageos.settings.lifemode.LifeModeTile;
 
 public class BootCompletedReceiver extends BroadcastReceiver {
@@ -45,24 +46,26 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         GotweaksBatterySaverReceiver.register(context);
 
         if (LifeModeController.isSupported()) {
-            setLifeModeTileEnabled(context);
+            setComponentEnabled(context, new ComponentName(context, LifeModeTile.class));
+            setComponentEnabled(context,
+                    new ComponentName(context, LifeModeSettingsActivity.class));
             LifeModeController.register(context);
         }
     }
 
     /**
-     * The tile ships disabled (see AndroidManifest) so it stays out of the QS
-     * editor on the sibling variants, where Life Mode isn't a feature. Enable
-     * it here on pepito. DONT_KILL_APP: this is our own process.
+     * The tile and its long-press settings trampoline both ship disabled (see
+     * AndroidManifest) so they stay out of the QS editor - and out of intent
+     * resolution - on the sibling variants, where Life Mode isn't a feature.
+     * Enable them here on pepito. DONT_KILL_APP: this is our own process.
      */
-    private void setLifeModeTileEnabled(final Context context) {
+    private void setComponentEnabled(final Context context, final ComponentName component) {
         final PackageManager pm = context.getPackageManager();
-        final ComponentName tile = new ComponentName(context, LifeModeTile.class);
-        if (pm.getComponentEnabledSetting(tile)
+        if (pm.getComponentEnabledSetting(component)
                 == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
             return;
         }
-        pm.setComponentEnabledSetting(tile, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+        pm.setComponentEnabledSetting(component, PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP);
     }
 }

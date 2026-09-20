@@ -1,2 +1,5 @@
 # thermal HAL monitors kernel thermal events via uevent socket
 allow hal_thermal_default self:netlink_kobject_uevent_socket { create bind read getopt setopt };
+
+# thermal HAL picks the pepito sensor config off ro.vendor.xiaomi.device
+get_prop(hal_thermal_default, vendor_xiaomi_prop)

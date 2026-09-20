@@ -30,6 +30,7 @@
 
 #include <unordered_map>
 #include <android-base/logging.h>
+#include <android-base/properties.h>
 #include <android/hardware/thermal/2.0/IThermal.h>
 
 #include "thermalData.h"
@@ -120,6 +121,42 @@ namespace implementation {
 			50000,
 			95000,
 			50000,
+			true,
+		},
+	};
+
+	/* Palm PVG100 (pepito): xo-therm sits next to the SoC on this tiny board
+	 * and runs ~15C over the case (53C with a 39C battery, phone merely warm),
+	 * so the Xiaomi 50C SEVERE limit fires within minutes of camera use.
+	 * case-therm-adc is NOT usable: measured on-device it falls as the board
+	 * heats and reads 34C on a 24C phone. Keep xo-therm, raise the limit. */
+	std::vector<struct target_therm_cfg> sensor_cfg_pepito =
+	{
+		{
+			TemperatureType::CPU,
+			cpu_sensors_8937,
+			"",
+			95000,
+			115000,
+			95000,
+			true,
+		},
+		{
+			TemperatureType::GPU,
+			{ "gpu-usr" },
+			"GPU",
+			95000,
+			115000,
+			95000,
+			true,
+		},
+		{
+			TemperatureType::SKIN,
+			{ "xo-therm-adc" },
+			"skin",
+			60000,
+			95000,
+			60000,
 			true,
 		},
 	};
@@ -1199,7 +1236,10 @@ namespace implementation {
 			LOG(ERROR) << "No config for soc ID: " << soc_id;
 			return;
 		}
-		thermalConfig = add_target_config(soc_id, it->second);
+		if (android::base::GetProperty("ro.vendor.xiaomi.device", "") == "pepito")
+			thermalConfig = sensor_cfg_pepito;
+		else
+			thermalConfig = add_target_config(soc_id, it->second);
 		for (it_vec = thermalConfig.begin();
 				it_vec != thermalConfig.end(); it_vec++) {
 			if (it_vec->type == TemperatureType::BCL_PERCENTAGE)

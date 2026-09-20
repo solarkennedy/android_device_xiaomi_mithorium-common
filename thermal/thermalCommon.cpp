@@ -32,6 +32,7 @@
 #include <cinttypes>
 #include <string>
 #include <dirent.h>
+#include <unistd.h>
 #include <unordered_map>
 #include <fstream>
 
@@ -46,8 +47,13 @@
 #define TZ_DIR_FMT		"thermal_zone%d"
 #define TEMPERATURE_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/temp"
 #define POLICY_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/policy"
-#define TRIP_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/trip_point_1_temp"
-#define HYST_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/trip_point_1_hyst"
+/* The user_space zones on the 4.19 msm8937 kernel carry a single trip
+ * (trip_point_0); QTI's trip_point_1 only exists on newer targets. Writing the
+ * missing file failed silently, so no threshold was ever armed and a severity
+ * only changed when the framework happened to poll (and then never cleared).
+ * initThreshold() picks trip 1 when present, else trip 0. */
+#define TRIP_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/trip_point_%d_temp"
+#define HYST_FILE_FORMAT	"/sys/class/thermal/thermal_zone%d/trip_point_%d_hyst"
 #define USER_SPACE_POLICY	"user_space"
 #define TZ_TYPE			"type"
 #define CDEV_DIR_NAME		"cooling_device"
@@ -469,6 +475,7 @@ void ThermalCommon::initThreshold(struct therm_sensor& sensor)
 	int ret = 0, idx;
 	ThrottlingSeverity severity = ThrottlingSeverity::NONE;
 	int next_trip, curr_trip, hyst_temp = 0;
+	int trip_idx = 1;
 
 	LOG(DEBUG) << "Entering " <<__func__;
 	if (!sensor.positiveThresh) {
@@ -490,6 +497,11 @@ void ThermalCommon::initThreshold(struct therm_sensor& sensor)
 		return;
 	}
 
+	snprintf(file_name, sizeof(file_name), TRIP_FILE_FORMAT,
+			sensor.tzn, trip_idx);
+	if (access(file_name, F_OK) != 0)
+		trip_idx = 0;
+
 	next_trip = UNKNOWN_TEMPERATURE;
 	for (idx = 0;idx <= (int)ThrottlingSeverity::SHUTDOWN; idx++) {
 		if (isnan(sensor.thresh.hotThrottlingThresholds[idx])
@@ -505,7 +517,7 @@ void ThermalCommon::initThreshold(struct therm_sensor& sensor)
 		LOG(DEBUG) << "Sensor: " << sensor.t.name << " high trip:"
 			<< next_trip << std::endl;
 		snprintf(file_name, sizeof(file_name), TRIP_FILE_FORMAT,
-				sensor.tzn);
+				sensor.tzn, trip_idx);
 		writeToFile(std::string_view(file_name), std::to_string(next_trip));
 	}
 	if (sensor.t.throttlingStatus != ThrottlingSeverity::NONE) {
@@ -519,7 +531,7 @@ void ThermalCommon::initThreshold(struct therm_sensor& sensor)
 		LOG(DEBUG) << "Sensor: " << sensor.t.name << " hysteresis:"
 			<< hyst_temp << std::endl;
 		snprintf(file_name, sizeof(file_name), HYST_FILE_FORMAT,
-				sensor.tzn);
+				sensor.tzn, trip_idx);
 		writeToFile(std::string_view(file_name), std::to_string(hyst_temp));
 	}
 

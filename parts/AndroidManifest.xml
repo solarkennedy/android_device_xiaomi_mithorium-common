@@ -55,6 +55,22 @@
          also carried by the system UID rather than a privapp entry. -->
     <uses-permission android:name="android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS" />
 
+    <!-- Emergency-only recovery watchdog (EmergencyWatchdogController). Same
+         system-UID-carries-it story as the Life Mode levers above: READ_PHONE_STATE
+         is a runtime permission (needed to register the ServiceState TelephonyCallback)
+         and READ_PRIVILEGED_PHONE_STATE is signature|privileged (un-sanitized
+         ServiceState / full NetworkRegistrationInfo, so WWAN reg state is not redacted).
+         Neither needs a privapp-permissions entry; sharedUserId=android.uid.system
+         carries both. MODIFY_PHONE_STATE lets the nudge re-select the network
+         (TelephonyManager.setNetworkSelectionModeAutomatic). -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
+    <!-- The watchdog debounce is a WAKEUP alarm (setExactAndAllowWhileIdle) so a
+         screen-off/overnight stick is recovered on time; exact alarms need this
+         since S. signature|privileged|appop - carried by the system UID. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 
     <application
@@ -70,6 +86,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
+
+        <!-- Safety power-on for the emergency-watchdog radio-cycle nudge. Manifest
+             (not dynamic) so it still fires if XiaomiParts was killed during the
+             radio-off window, guaranteeing the radio can't be stranded off. Not
+             exported; triggered only by our own explicit alarm PendingIntent. -->
+        <receiver android:name=".emergencywatchdog.RadioOnReceiver"
+                  android:exported="false" />
 
         <activity
             android:name=".dirac.DiracActivity"

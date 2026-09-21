@@ -26,6 +26,7 @@ import android.util.Log;
 
 import org.lineageos.settings.dirac.DiracUtils;
 import org.lineageos.settings.doze.DozeUtils;
+import org.lineageos.settings.emergencywatchdog.EmergencyWatchdogController;
 import org.lineageos.settings.gotweaks.GotweaksBatterySaverReceiver;
 import org.lineageos.settings.lifemode.LifeModeController;
 import org.lineageos.settings.lifemode.LifeModeSettingsActivity;
@@ -50,6 +51,12 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             setComponentEnabled(context,
                     new ComponentName(context, LifeModeSettingsActivity.class));
             LifeModeController.register(context);
+        }
+
+        // "Emergency calls only" recovery watchdog (Phase 0 dry run).
+        // Ships disabled; gated live on persist.gotweak.emergency_watchdog.
+        if (EmergencyWatchdogController.isSupported()) {
+            EmergencyWatchdogController.register(context);
         }
     }
 

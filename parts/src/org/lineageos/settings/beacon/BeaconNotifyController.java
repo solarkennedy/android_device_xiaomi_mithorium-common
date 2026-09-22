@@ -34,19 +34,24 @@ import android.util.Log;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * BLE-beacon push notifications. See PLAN-ble-beacon-notify.md.
  *
  * <p>Turns a private manufacturer-data advertisement into a notification with no
  * app, no pairing and no internet. The point of doing it in the ROM is the scan
- * shape: {@code FIRST_MATCH | MATCH_LOST} with a non-empty filter is matched and
- * tracked <em>inside the Pronto controller</em> (APCF on-found/on-lost; pepito
- * reports max_filter=16, 32 tracked advertisers), so the AP is never woken by
- * anybody else's advertisements. That combination is also the one le_scan's
- * ScanManager leaves running at screen-off (at a 512 ms / 10.24 s duty cycle) and
- * exempts from the 10-minute long-scan downgrade. It has NO software fallback: on
- * a controller without offloaded filtering startScan fails, which we log.
+ * shape: a filtered <em>batch</em> scan. The Pronto controller matches the filter
+ * (APCF; pepito reports max_filter=16) and stores hits in its own memory, and the
+ * stack flushes that store on a wakeup alarm. Batch clients all ride ONE radio duty
+ * cycle, so next to the batch scan GMS Find My Device keeps running this costs no
+ * extra radio time at all (CT-3, 09-22: a second regular scan measured +10 mW; a
+ * batch client shares the existing one). The price is latency: hits are delivered
+ * at the flush, whose interval is the smallest reportDelayMillis among the batch
+ * clients (floor 20 s screen-off) with a 1,1,2,2,4 backoff on empty flushes, so
+ * {@link #REPORT_DELAY_MS} gives 5..20 min screen-off. On a unit with no other
+ * batch client the flush alarm is our own cost. Batch scans need offloaded
+ * filtering; on a controller without it startScan fails, which we log.
  *
  * <p>Over the air (legacy 31-byte advert, company id 0xFFFF):
  * <pre>  'P' 'V' | ver:3 rsvd:3 status:2 | txid | seq | text (UTF-8, to end of field)</pre>
@@ -115,13 +120,14 @@ public final class BeaconNotifyController {
     private static final int GLYPH_DP = 48;
     private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
+    private static final long REPORT_DELAY_MS = 5 * 60 * 1000L;
 
     /**
      * One event = one (txid, seq). Every sighting of it inside this window is a repeat:
-     * the controller flapping LOST/FOUND mid-burst (it does, at the 5% screen-off duty
-     * cycle), or the transmitter deliberately re-bursting for reliability. Time-boxed
-     * rather than forever so a transmitter whose seq restarts (reboot, 8-bit wrap)
-     * cannot have a new event mistaken for an old one.
+     * a batch flush carries every advert heard during a burst (dozens of copies), and
+     * the transmitter may deliberately re-burst for reliability. Time-boxed rather than
+     * forever so a transmitter whose seq restarts (reboot, 8-bit wrap) cannot have a new
+     * event mistaken for an old one.
      */
     private static final long DEDUPE_WINDOW_MS = 10 * 60 * 1000L;
 
@@ -226,11 +232,9 @@ public final class BeaconNotifyController {
                 .setManufacturerData(COMPANY_ID, MAGIC, MAGIC_MASK)
                 .build();
         final ScanSettings settings = new ScanSettings.Builder()
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH
-                        | ScanSettings.CALLBACK_TYPE_MATCH_LOST)
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-                .setNumOfMatches(ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT)
+                .setReportDelay(REPORT_DELAY_MS)
                 .build();
         try {
             scanner.startScan(Collections.singletonList(filter), settings, mScanCallback);
@@ -264,6 +268,19 @@ public final class BeaconNotifyController {
         }
 
         @Override
+        public void onBatchScanResults(final List<ScanResult> results) {
+            mWakeLock.acquire(WAKELOCK_TIMEOUT_MS);
+            final long realtime = SystemClock.elapsedRealtime();
+            final long uptime = SystemClock.uptimeMillis();
+            mHandler.post(() -> {
+                Log.i(TAG, "batch flush: " + results.size() + " results");
+                for (ScanResult r : results) {
+                    handleResult(ScanSettings.CALLBACK_TYPE_ALL_MATCHES, r, realtime, uptime);
+                }
+            });
+        }
+
+        @Override
         public void onScanFailed(final int errorCode) {
             Log.w(TAG, "onScanFailed: " + errorCode);
             mHandler.post(() -> mScanner = null);
@@ -273,10 +290,6 @@ public final class BeaconNotifyController {
     private void handleResult(final int callbackType, final ScanResult result,
             final long realtime, final long uptime) {
         final String addr = result.getDevice().getAddress();
-        if (callbackType == ScanSettings.CALLBACK_TYPE_MATCH_LOST) {
-            Log.i(TAG, "LOST " + addr + " rt=" + realtime + " up=" + uptime);
-            return;
-        }
         final ScanRecord record = result.getScanRecord();
         final byte[] data = record != null ? record.getManufacturerSpecificData(COMPANY_ID) : null;
         if (data == null || data.length < HEADER_LEN) {

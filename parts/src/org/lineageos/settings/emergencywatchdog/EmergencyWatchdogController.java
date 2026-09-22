@@ -6,6 +6,9 @@
 package org.lineageos.settings.emergencywatchdog;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -123,6 +126,18 @@ public final class EmergencyWatchdogController extends TelephonyCallback
     private static final String PROP_RADIO_OFF_MS = "persist.gotweak.ewd_radio_off_ms";
     private static final int RADIO_OFF_DEFAULT_MS = 3000;
 
+    /**
+     * Field-visibility: post a notification for every decision the watchdog takes
+     * (WOULD-NUDGE, nudge fired, recovered / did not recover, skipped for cooldown
+     * or cap) so the daily driver sees what happened without a logcat pull. Only
+     * relevant while the watchdog is enabled; default ON, `setprop
+     * persist.gotweak.ewd_notify 0` silences it. Events stack as a history (one
+     * slot per event, auto-cancel) rather than replacing each other.
+     */
+    private static final String PROP_NOTIFY = "persist.gotweak.ewd_notify";
+    private static final String NOTIFY_CHANNEL = "emergency_watchdog";
+    private static final String NOTIFY_CHANNEL_NAME = "Emergency-only watchdog";
+
     /** Explicit action for the safety power-on alarm (delivered to RadioOnReceiver). */
     static final String ACTION_RADIO_ON =
             "org.lineageos.settings.emergencywatchdog.ACTION_RADIO_ON";
@@ -194,6 +209,8 @@ public final class EmergencyWatchdogController extends TelephonyCallback
     private int mNudgesThisBoot;
     private long mNudgedAtElapsed;      // when the last nudge fired; for recovery timing
     private boolean mAwaitingRecovery;  // a nudge fired; watching for the recovery
+    private boolean mChannelCreated;
+    private int mNotifySeq;
 
     private final BroadcastReceiver mDebounceReceiver = new BroadcastReceiver() {
         @Override
@@ -300,8 +317,10 @@ public final class EmergencyWatchdogController extends TelephonyCallback
                 return;
             }
             mAwaitingRecovery = false;
-            Log.w(TAG, "nudge did not recover (still stuck "
-                    + ((now - mNudgedAtElapsed) / 1000) + "s after)");
+            final long after = (now - mNudgedAtElapsed) / 1000;
+            Log.w(TAG, "nudge did not recover (still stuck " + after + "s after)");
+            notify("Nudge did not recover", "Still emergency-only " + after
+                    + " s after nudge #" + mNudgesThisBoot + " (try airplane now)");
         }
         if (mArmed) {
             return; // already counting; keep the original deadline
@@ -334,6 +353,8 @@ public final class EmergencyWatchdogController extends TelephonyCallback
             mAwaitingRecovery = false;
             final long dt = (SystemClock.elapsedRealtime() - mNudgedAtElapsed) / 1000;
             Log.w(TAG, "recovered " + dt + "s after nudge");
+            notify("Recovered after nudge", "Back in service " + dt + " s after nudge #"
+                    + mNudgesThisBoot);
         }
         if (mArmed) {
             cancelDebounce();
@@ -383,6 +404,8 @@ public final class EmergencyWatchdogController extends TelephonyCallback
             Log.w(TAG, "WOULD-NUDGE: stuck emergency-only " + stuckFor
                     + "s, call idle, cell present -- nudge disabled, no action -- "
                     + describe(serviceState, state));
+            notify("Would nudge (dry run)", "Emergency-only " + stuckFor + " s on "
+                    + serviceState.getOperatorNumeric() + "; nudge disabled");
             mStuckSinceElapsed = 0;
             return;
         }
@@ -392,6 +415,8 @@ public final class EmergencyWatchdogController extends TelephonyCallback
         if (mNudgesThisBoot >= maxPerBoot) {
             Log.w(TAG, "skip nudge: per-boot cap reached (" + mNudgesThisBoot + "/"
                     + maxPerBoot + ") after " + stuckFor + "s stuck");
+            notify("Nudge skipped: per-boot cap", "Emergency-only " + stuckFor + " s; "
+                    + mNudgesThisBoot + "/" + maxPerBoot + " nudges used this boot");
             mStuckSinceElapsed = 0;
             return;
         }
@@ -401,6 +426,8 @@ public final class EmergencyWatchdogController extends TelephonyCallback
         if (mLastNudgeElapsed != 0 && (now - mLastNudgeElapsed) < cooldownMs) {
             final long left = (cooldownMs - (now - mLastNudgeElapsed)) / 1000;
             Log.w(TAG, "skip nudge: cooldown (" + left + "s left) after " + stuckFor + "s stuck");
+            notify("Nudge skipped: cooldown", "Emergency-only " + stuckFor + " s; " + left
+                    + " s of cooldown left");
             mStuckSinceElapsed = 0;
             return;
         }
@@ -436,9 +463,48 @@ public final class EmergencyWatchdogController extends TelephonyCallback
                         + "s -- setNetworkSelectionModeAutomatic -- "
                         + describe(serviceState, State.EMERGENCY_LIMITED));
             }
+            notify("Nudge #" + mNudgesThisBoot + " (" + mech + ")", "Emergency-only "
+                    + stuckFor + " s on " + serviceState.getOperatorNumeric()
+                    + "; watching for recovery");
         } catch (Exception e) {
             mAwaitingRecovery = false;
             Log.e(TAG, "NUDGE (" + mech + ") FAILED: " + e);
+            notify("Nudge FAILED", mech + ": " + e);
+        }
+    }
+
+    /**
+     * Post one watchdog event as a notification. Never throws (a notification
+     * failure must not take the handler thread down); channel is created lazily
+     * so a unit that never enables the watchdog never grows a channel.
+     */
+    private void notify(final String title, final String body) {
+        if (!SystemProperties.getBoolean(PROP_NOTIFY, true)) {
+            return;
+        }
+        try {
+            final NotificationManager nm =
+                    mAppContext.getSystemService(NotificationManager.class);
+            if (nm == null) {
+                return;
+            }
+            if (!mChannelCreated) {
+                nm.createNotificationChannel(new NotificationChannel(NOTIFY_CHANNEL,
+                        NOTIFY_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT));
+                mChannelCreated = true;
+            }
+            final Notification n = new Notification.Builder(mAppContext, NOTIFY_CHANNEL)
+                    .setSmallIcon(android.R.drawable.stat_sys_warning)
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setStyle(new Notification.BigTextStyle().bigText(body))
+                    .setShowWhen(true)
+                    .setAutoCancel(true)
+                    .build();
+            // One slot per event so they stack as a history instead of replacing.
+            nm.notify(TAG, mNotifySeq++, n);
+        } catch (Exception e) {
+            Log.w(TAG, "notify failed: " + e);
         }
     }
 

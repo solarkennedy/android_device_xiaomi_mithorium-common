@@ -48,9 +48,13 @@ import java.util.List;
  * extra radio time at all (CT-3, 09-22: a second regular scan measured +10 mW; a
  * batch client shares the existing one). The price is latency: hits are delivered
  * at the flush, whose interval is the smallest reportDelayMillis among the batch
- * clients (floor 20 s screen-off) with a 1,1,2,2,4 backoff on empty flushes, so
- * {@link #REPORT_DELAY_MS} gives 5..20 min screen-off. On a unit with no other
- * batch client the flush alarm is our own cost. Batch scans need offloaded
+ * clients (floor 20 s screen-off) with a 1,1,2,2,4 backoff on empty flushes. Each
+ * flush is a full system wake, and that is the remaining cost: at a 5-minute delay
+ * the CT-3 measured +6 mW (about 5 extra wakes an hour); {@link #REPORT_DELAY_MS}
+ * matches Find My Device's own 20 minutes so our flushes coincide with the ones
+ * already happening. The trade is 20..40 minutes of latency. Drop it to 5 minutes
+ * for a doorbell-class use, and expect ~+6 mW. On a unit with no other batch
+ * client the flush alarm is our own cost whatever the delay. Batch scans need offloaded
  * filtering; on a controller without it startScan fails, which we log.
  *
  * <p>Over the air (legacy 31-byte advert, company id 0xFFFF):
@@ -120,7 +124,7 @@ public final class BeaconNotifyController {
     private static final int GLYPH_DP = 48;
     private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
-    private static final long REPORT_DELAY_MS = 5 * 60 * 1000L;
+    private static final long REPORT_DELAY_MS = 20 * 60 * 1000L;
 
     /**
      * One event = one (txid, seq). Every sighting of it inside this window is a repeat:

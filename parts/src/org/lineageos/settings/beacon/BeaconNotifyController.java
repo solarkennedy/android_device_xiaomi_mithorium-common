@@ -41,21 +41,18 @@ import java.util.List;
  *
  * <p>Turns a private manufacturer-data advertisement into a notification with no
  * app, no pairing and no internet. The point of doing it in the ROM is the scan
- * shape: a filtered <em>batch</em> scan. The Pronto controller matches the filter
- * (APCF; pepito reports max_filter=16) and stores hits in its own memory, and the
- * stack flushes that store on a wakeup alarm. Batch clients all ride ONE radio duty
- * cycle, so next to the batch scan GMS Find My Device keeps running this costs no
- * extra radio time at all (CT-3, 09-22: a second regular scan measured +10 mW; a
- * batch client shares the existing one). The price is latency: hits are delivered
- * at the flush, whose interval is the smallest reportDelayMillis among the batch
- * clients (floor 20 s screen-off) with a 1,1,2,2,4 backoff on empty flushes. Each
- * flush is a full system wake, and that is the remaining cost: at a 5-minute delay
- * the CT-3 measured +6 mW (about 5 extra wakes an hour); {@link #REPORT_DELAY_MS}
- * matches Find My Device's own 20 minutes so our flushes coincide with the ones
- * already happening. The trade is 20..40 minutes of latency. Drop it to 5 minutes
- * for a doorbell-class use, and expect ~+6 mW. On a unit with no other batch
- * client the flush alarm is our own cost whatever the delay. Batch scans need offloaded
- * filtering; on a controller without it startScan fails, which we log.
+ * shape: an <em>opportunistic</em>, filtered <em>batch</em> client. Opportunistic
+ * means we never ask the controller to scan on our behalf: the stack programs our
+ * hardware filter (APCF; pepito reports max_filter=16) but leaves us out when it
+ * decides whether, and how hard, to run the batch scan. Whenever some other batch
+ * client - on a phone with Google services that is Find My Device, which scans in
+ * ~20-minute stretches - has the radio listening, our filter matches in the
+ * controller's own memory and the hit reaches us at that client's flush. So the
+ * radio cost is zero by construction (CT-3, 09-23: inside a Find My scan, ours on
+ * vs off = 1 mW; a batch scan of our own in the gaps measured +7 mW, a FIRST_MATCH
+ * regular scan +12). The price is that nothing is heard between other clients'
+ * scans, which can be hours on a quiet night; transmitters repeat their bursts.
+ * Batch scans need offloaded filtering; without it startScan fails, which we log.
  *
  * <p>Over the air (legacy 31-byte advert, company id 0xFFFF):
  * <pre>  'P' 'V' | ver:3 rsvd:3 status:2 | txid | seq | text (UTF-8, to end of field)</pre>
@@ -124,6 +121,8 @@ public final class BeaconNotifyController {
     private static final int GLYPH_DP = 48;
     private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
+    // Nominal: an opportunistic client never sets the flush cadence; it only has to
+    // be non-zero for the stack to treat us as a batch client at all.
     private static final long REPORT_DELAY_MS = 20 * 60 * 1000L;
 
     /**
@@ -237,7 +236,7 @@ public final class BeaconNotifyController {
                 .build();
         final ScanSettings settings = new ScanSettings.Builder()
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .setScanMode(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
                 .setReportDelay(REPORT_DELAY_MS)
                 .build();
         try {

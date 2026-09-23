@@ -26,12 +26,18 @@ import android.graphics.Paint;
 import android.graphics.drawable.Icon;
 import android.icu.text.BreakIterator;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
+import android.os.ServiceManager;
 import android.os.HandlerThread;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -125,6 +131,7 @@ public final class BeaconNotifyController {
     private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
     private static final long REPORT_DELAY_MS = 20 * 60 * 1000L;
+    private static final long POLL_MS = 3 * 60 * 1000L;
 
     /**
      * One event = one (txid, seq). Every sighting of it inside this window is a repeat:
@@ -209,15 +216,66 @@ public final class BeaconNotifyController {
     };
 
     private void reevaluate() {
-        final boolean want = isEnabled();
-        if (want == (mScanner != null)) {
-            return;
+        mHandler.removeCallbacks(mPoll);
+        final boolean enabled = isEnabled();
+        // Only ride a scan somebody else is already running (see class comment):
+        // a batch scan of our own costs ~7 mW, joining one costs nothing.
+        final boolean want = enabled && otherBatchScanRunning();
+        if (want != (mScanner != null)) {
+            if (want) {
+                startScan();
+            } else {
+                stopScan();
+            }
         }
-        if (want) {
-            startScan();
-        } else {
-            stopScan();
+        if (enabled) {
+            // postDelayed rides the handler's uptime clock, so this never wakes the
+            // AP by itself; we notice a scan starting or stopping the next time the
+            // phone is awake anyway.
+            mHandler.postDelayed(mPoll, POLL_MS);
         }
+    }
+
+    private final Runnable mPoll = this::reevaluate;
+
+    /**
+     * Whether another client currently has a batch scan running. There is no query
+     * for this on IBluetoothScan and BatteryStats blames the shared scan on whoever
+     * won its parameters (us, once we join), so read the Bluetooth service's own
+     * per-client bookkeeping: its dump lists each app's "Ongoing" scans.
+     */
+    private boolean otherBatchScanRunning() {
+        final IBinder bt = ServiceManager.checkService("bluetooth_manager");
+        if (bt == null) {
+            return false;
+        }
+        try {
+            final ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
+            bt.dumpAsync(pipe[1].getFileDescriptor(), new String[0]);
+            pipe[1].close();
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(pipe[0].getFileDescriptor()), StandardCharsets.UTF_8))) {
+                String app = null;
+                boolean ongoing = false;
+                String line;
+                while ((line = r.readLine()) != null) {
+                    if (line.endsWith("(Registered):") || line.endsWith("(Unregistered):")) {
+                        app = line.trim();
+                        ongoing = false;
+                    } else if (line.contains("Ongoing ")) {
+                        ongoing = true;
+                    } else if (ongoing && line.contains("Batch Scan")
+                            && app != null && !app.startsWith("android.uid.system")) {
+                        pipe[0].close();
+                        return true;
+                    }
+                }
+            }
+            pipe[0].close();
+        } catch (Exception e) {
+            Log.w(TAG, "bluetooth dump failed: " + e);
+        }
+        return false;
     }
 
     private void startScan() {

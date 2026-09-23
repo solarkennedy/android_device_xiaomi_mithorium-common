@@ -79,6 +79,10 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
                      android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The beacon scanner rides other apps' batch scans and finds out whether one is
+         running by reading the Bluetooth service's dump (no query exists for it).
+         dump() enforces DUMP; signature-level, carried by the system UID. -->
+    <uses-permission android:name="android.permission.DUMP" />
 
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 

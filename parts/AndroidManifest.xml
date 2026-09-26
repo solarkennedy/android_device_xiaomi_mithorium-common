@@ -71,14 +71,13 @@
          since S. signature|privileged|appop - carried by the system UID. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
-    <!-- BLE-beacon notifications (BeaconNotifyController). BLUETOOTH_SCAN is a runtime
+    <!-- BLE-beacon scanner (BeaconNotifyController). BLUETOOTH_SCAN is a runtime
          permission; as with BLUETOOTH_CONNECT above, the system UID carries it.
          neverForLocation because we never derive location from a scan - and it keeps
-         results flowing when Life Mode has location switched off. POST_NOTIFICATIONS
-         is runtime too, same story. -->
+         results flowing when Life Mode has location switched off. The notifications
+         themselves are posted by BeaconNotifier (Mi8937), not from here. -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
                      android:usesPermissionFlags="neverForLocation" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- The beacon scanner rides other apps' batch scans and finds out whether one is
          running by reading the Bluetooth service's dump (no query exists for it).
          dump() enforces DUMP; signature-level, carried by the system UID. -->

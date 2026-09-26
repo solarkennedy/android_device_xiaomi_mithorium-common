@@ -98,6 +98,7 @@ public final class BeaconNotifyController {
 
     /** Pepito Tweaks toggle. Default OFF. Covered by gotweak_prop sepolicy. */
     public static final String PROP_ENABLED = "persist.gotweak.ble_beacon";
+    private static final String PROP_SOLO = "persist.gotweak.ble_beacon_solo";
 
     /**
      * Poke to re-read {@link #PROP_ENABLED}. Exported so LineageParts (a different
@@ -220,7 +221,12 @@ public final class BeaconNotifyController {
         final boolean enabled = isEnabled();
         // Only ride a scan somebody else is already running (see class comment):
         // a batch scan of our own costs ~7 mW, joining one costs nothing.
-        final boolean want = enabled && otherBatchScanRunning();
+        // persist.gotweak.ble_beacon_solo=1: run our own batch scan instead of waiting
+        // to join someone else's (~7 mW, hears every 20 min regardless of Find My).
+        // Bench control for "is the join path capturing anything", and the mode for a
+        // unit without Google services.
+        final boolean want = enabled && (SystemProperties.getBoolean(PROP_SOLO, false)
+                || otherBatchScanRunning());
         if (want != (mScanner != null)) {
             if (want) {
                 startScan();

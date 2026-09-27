@@ -64,18 +64,14 @@ import java.util.List;
  * filtering; on a controller without it startScan fails, which we log.
  *
  * <p>Over the air (legacy 31-byte advert, company id 0xFFFF):
- * <pre>  'P' 'V' | ver:3 rsvd:3 status:2 | txid | seq | text (UTF-8, to end of field)</pre>
- * status is the Nagios plugin return code - 0 OK, 1 WARNING, 2 CRITICAL - with 3
- * (UNKNOWN) doubling as "no status, just a message". It only picks the notification
- * channel, so each severity's sound/importance is the user's to set in Settings.
+ * <pre>  'P' 'V' | txid | seq | text (UTF-8, to end of field)</pre>
  * If the text opens with a symbol or emoji ("\uD83D\uDEAA Garage open") that glyph is
  * lifted out and becomes the notification's icon - see {@link #renderGlyph}.
- * The reserved bits must be zero; one is earmarked for "text is packed/compressed".
  * seq identifies the event (see {@link #DEDUPE_WINDOW_MS}); what the event means is
- * simply the text. That leaves 22 bytes of text. A transmitter that wants more makes the advert
+ * simply the text. That leaves 23 bytes of text. A transmitter that wants more makes the advert
  * scannable and puts up to 29 further bytes in the scan response's Complete Local
  * Name field; Pronto hands both packets over in the one on-found event (verified by
- * btsnoop on pepito) and we append the name to the text, for 51 bytes in all.
+ * btsnoop on pepito) and we append the name to the text, for 52 bytes in all.
  * The hardware filter is company id + the two magic bytes, so one APCF slot covers
  * every transmitter. There is deliberately no authentication (PLAN §5): anyone in
  * radio range who knows the format can post a notification.
@@ -111,29 +107,15 @@ public final class BeaconNotifyController {
     private static final int COMPANY_ID = 0xFFFF; // reserved for testing / unassigned
     private static final byte[] MAGIC = { 'P', 'V' };
     private static final byte[] MAGIC_MASK = { (byte) 0xFF, (byte) 0xFF };
-    private static final int HEADER_LEN = 5; // magic(2) ver txid seq
-    private static final int VERSION = 1;
+    private static final int HEADER_LEN = 4; // magic(2) txid seq
 
-    // Indexed by status. All SILENT by design: delivery already trails the event by
-    // minutes to hours (we only hear beacons during other apps' scans), so nothing
-    // here is worth a sound, and silent channels sidestep the fact that Settings
-    // won't let the user edit a system-UID app's channels anyway. CRITICAL still
-    // gets a (silent) heads-up; the others just land in the shade.
-    private static final String[] CHANNEL_IDS =
-            { "beacon_ok", "beacon_warning", "beacon_critical", "beacon" };
-    private static final String[] CHANNEL_NAMES =
-            { "Beacon: OK", "Beacon: warning", "Beacon: critical", "Beacon" };
-    private static final int[] CHANNEL_IMPORTANCE = {
-            NotificationManager.IMPORTANCE_LOW, NotificationManager.IMPORTANCE_LOW,
-            NotificationManager.IMPORTANCE_HIGH, NotificationManager.IMPORTANCE_LOW };
-    private static final String[] STATUS_LABELS = { "OK", "WARNING", "CRITICAL", null };
-    private static final int[] STATUS_COLORS = { 0xFF2E7D32, 0xFFF9A825, 0xFFC62828, 0 };
-    // Small icon when the text brings no glyph of its own.
-    private static final int[] STATUS_ICONS = {
-            android.R.drawable.presence_online, android.R.drawable.stat_sys_warning,
-            android.R.drawable.stat_notify_error, android.R.drawable.stat_sys_data_bluetooth };
+    // Silent by design: delivery already trails the event by minutes to hours (we
+    // only hear beacons during other apps' scans), so nothing here is worth a sound,
+    // and a system-UID app's channels can't be edited by the user in Settings anyway.
+    private static final String CHANNEL_ID = "beacon";
+    private static final String CHANNEL_NAME = "Beacon";
+    private static final int GLYPH_COLOR = 0xFF757575;
     private static final int GLYPH_DP = 48;
-    private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
     private static final long REPORT_DELAY_MS = 20 * 60 * 1000L;
     private static final long POLL_MS = 3 * 60 * 1000L;
@@ -368,10 +350,8 @@ public final class BeaconNotifyController {
             Log.i(TAG, "FOUND " + addr + " but payload too short; dropped");
             return;
         }
-        final int ver = (data[2] & 0xE0) >> 5;
-        final int status = data[2] & 0x03;
-        final int txId = data[3] & 0xFF;
-        final int seq = data[4] & 0xFF;
+        final int txId = data[2] & 0xFF;
+        final int seq = data[3] & 0xFF;
         String text = new String(data, HEADER_LEN, data.length - HEADER_LEN,
                 StandardCharsets.UTF_8);
         final String more = record.getDeviceName(); // scan-response continuation, if any
@@ -382,14 +362,9 @@ public final class BeaconNotifyController {
         // the report sat between the Bluetooth process and us.
         final long stackAgeMs = (SystemClock.elapsedRealtimeNanos() - result.getTimestampNanos())
                 / 1_000_000L;
-        Log.i(TAG, "FOUND " + addr + " rssi=" + result.getRssi() + " ver=" + ver
-                + " status=" + status + " tx=" + txId + " seq=" + seq
+        Log.i(TAG, "FOUND " + addr + " rssi=" + result.getRssi() + " tx=" + txId + " seq=" + seq
                 + " text=\"" + text + "\" rt=" + realtime
                 + " up=" + uptime + " stackAgeMs=" + stackAgeMs);
-        if (ver != VERSION) {
-            Log.i(TAG, "unknown version; dropped");
-            return;
-        }
         if (mLastSeqAt[txId] != 0 && mLastSeq[txId] == seq
                 && realtime - mLastSeqAt[txId] < DEDUPE_WINDOW_MS) {
             Log.i(TAG, "repeat of tx=" + txId + " seq=" + seq + "; dropped");
@@ -400,7 +375,7 @@ public final class BeaconNotifyController {
         if (!isEnabled()) {
             return; // switched off without a poke; stay quiet until reevaluate() disarms
         }
-        post(txId, seq, status, text);
+        post(txId, seq, text);
     }
 
     /**
@@ -438,42 +413,36 @@ public final class BeaconNotifyController {
         return bitmap;
     }
 
-    private void post(final int txId, final int seq, final int status, final String text) {
+    private void post(final int txId, final int seq, final String text) {
         final NotificationManager nm = mAppContext.getSystemService(NotificationManager.class);
         if (nm == null) {
             return;
         }
         if (!mChannelCreated) {
             // Lazily, so a unit that never enables the feature never grows a channel.
-            for (int i = 0; i < CHANNEL_IDS.length; i++) {
-                final NotificationChannel c = new NotificationChannel(CHANNEL_IDS[i],
-                        CHANNEL_NAMES[i], CHANNEL_IMPORTANCE[i]);
-                c.setSound(null, null);
-                c.enableVibration(false);
-                nm.createNotificationChannel(c);
-            }
+            final NotificationChannel c = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_LOW);
+            c.setSound(null, null);
+            c.enableVibration(false);
+            nm.createNotificationChannel(c);
             mChannelCreated = true;
         }
         // A leading symbol is the icon, not part of the message.
         final String glyph = leadingGlyph(text);
         final String shown = glyph != null ? text.substring(glyph.length()).trim() : text;
         final String body = shown.isEmpty() ? "Event " + seq : shown;
-        final String label = STATUS_LABELS[status];
-        final String title = (label != null ? label + " \u00b7 " : "") + "Beacon " + txId;
-        final Notification.Builder b = new Notification.Builder(mAppContext, CHANNEL_IDS[status]);
+        final Notification.Builder b = new Notification.Builder(mAppContext, CHANNEL_ID);
         if (glyph != null) {
-            final Bitmap bitmap = renderGlyph(glyph,
-                    STATUS_COLORS[status] != 0 ? STATUS_COLORS[status] : GLYPH_PLAIN_COLOR);
+            final Bitmap bitmap = renderGlyph(glyph, GLYPH_COLOR);
             b.setSmallIcon(Icon.createWithBitmap(bitmap));
             b.setLargeIcon(bitmap);
         } else {
-            b.setSmallIcon(STATUS_ICONS[status]);
+            b.setSmallIcon(android.R.drawable.stat_sys_data_bluetooth);
         }
         final Notification n = b
-                .setColor(STATUS_COLORS[status])
-                .setContentTitle(title)
+                .setContentTitle("Beacon " + txId)
                 .setContentText(body)
-                .setStyle(new Notification.BigTextStyle().bigText(body)) // 51 bytes wraps
+                .setStyle(new Notification.BigTextStyle().bigText(body)) // 52 bytes wraps
                 .setShowWhen(true)
                 .setAutoCancel(true)
                 .build();

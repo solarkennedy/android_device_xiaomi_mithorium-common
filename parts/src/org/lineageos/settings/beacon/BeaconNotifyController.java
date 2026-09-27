@@ -5,6 +5,9 @@
 
 package org.lineageos.settings.beacon;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -17,6 +20,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.drawable.Icon;
+import android.icu.text.BreakIterator;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
@@ -60,8 +68,8 @@ import java.util.List;
  * status is the Nagios plugin return code - 0 OK, 1 WARNING, 2 CRITICAL - with 3
  * (UNKNOWN) doubling as "no status, just a message". It only picks the notification
  * channel, so each severity's sound/importance is the user's to set in Settings.
- * If the text opens with a symbol or emoji that glyph becomes the notification's
- * icon; that, and the per-status channels, live in BeaconNotifier (see {@link #post}).
+ * If the text opens with a symbol or emoji ("\uD83D\uDEAA Garage open") that glyph is
+ * lifted out and becomes the notification's icon - see {@link #renderGlyph}.
  * The reserved bits must be zero; one is earmarked for "text is packed/compressed".
  * seq identifies the event (see {@link #DEDUPE_WINDOW_MS}); what the event means is
  * simply the text. That leaves 22 bytes of text. A transmitter that wants more makes the advert
@@ -100,15 +108,28 @@ public final class BeaconNotifyController {
     public static final String ACTION_REEVALUATE = "org.lineageos.settings.beacon.REEVALUATE";
     private static final String POKE_PERMISSION = "android.permission.WRITE_SECURE_SETTINGS";
 
-    private static final String NOTIFIER_PACKAGE = "org.lineageos.pepito.beaconnotifier";
-    private static final String NOTIFIER_ACTION = NOTIFIER_PACKAGE + ".BEACON";
-
     private static final int COMPANY_ID = 0xFFFF; // reserved for testing / unassigned
     private static final byte[] MAGIC = { 'P', 'V' };
     private static final byte[] MAGIC_MASK = { (byte) 0xFF, (byte) 0xFF };
     private static final int HEADER_LEN = 5; // magic(2) ver txid seq
     private static final int VERSION = 1;
 
+    // Indexed by status. Importance is only the initial default; none bypasses DND.
+    private static final String[] CHANNEL_IDS =
+            { "beacon_ok", "beacon_warning", "beacon_critical", "beacon" };
+    private static final String[] CHANNEL_NAMES =
+            { "Beacon: OK", "Beacon: warning", "Beacon: critical", "Beacon" };
+    private static final int[] CHANNEL_IMPORTANCE = {
+            NotificationManager.IMPORTANCE_LOW, NotificationManager.IMPORTANCE_DEFAULT,
+            NotificationManager.IMPORTANCE_HIGH, NotificationManager.IMPORTANCE_DEFAULT };
+    private static final String[] STATUS_LABELS = { "OK", "WARNING", "CRITICAL", null };
+    private static final int[] STATUS_COLORS = { 0xFF2E7D32, 0xFFF9A825, 0xFFC62828, 0 };
+    // Small icon when the text brings no glyph of its own.
+    private static final int[] STATUS_ICONS = {
+            android.R.drawable.presence_online, android.R.drawable.stat_sys_warning,
+            android.R.drawable.stat_notify_error, android.R.drawable.stat_sys_data_bluetooth };
+    private static final int GLYPH_DP = 48;
+    private static final int GLYPH_PLAIN_COLOR = 0xFF757575;
     private static final long WAKELOCK_TIMEOUT_MS = 2000;
     private static final long REPORT_DELAY_MS = 20 * 60 * 1000L;
     private static final long POLL_MS = 3 * 60 * 1000L;
@@ -129,6 +150,7 @@ public final class BeaconNotifyController {
     private final PowerManager.WakeLock mWakeLock;
 
     private BluetoothLeScanner mScanner; // non-null while a scan is registered
+    private boolean mChannelCreated;
     // De-dupe state, indexed by txid: the last seq notified and when (elapsedRealtime).
     private final int[] mLastSeq = new int[256];
     private final long[] mLastSeqAt = new long[256];
@@ -378,17 +400,78 @@ public final class BeaconNotifyController {
     }
 
     /**
-     * Hands the beacon to BeaconNotifier (device/xiaomi/Mi8937/BeaconNotifier), an
-     * ordinary-UID app that owns the notification channels. Posting from here would
-     * put them under the system UID, whose channels Settings refuses to let the user
-     * edit ("System notifications cannot be modified"). Explicit + signature-guarded.
+     * The first grapheme cluster of {@code text} if it is a symbol (general category So:
+     * emoji, dingbats, arrows-with-meaning, Noto Sans Symbols fare), else null. Cluster
+     * rather than code point so VS16, skin tones and ZWJ sequences come along whole.
      */
+    private static String leadingGlyph(final String text) {
+        if (text.isEmpty() || Character.getType(text.codePointAt(0)) != Character.OTHER_SYMBOL) {
+            return null;
+        }
+        final BreakIterator it = BreakIterator.getCharacterInstance();
+        it.setText(text);
+        final int end = it.next();
+        return end == BreakIterator.DONE ? null : text.substring(0, end);
+    }
+
+    /**
+     * Draws the glyph with the system fonts. As a small icon SystemUI keeps only the
+     * alpha channel, so a colour emoji shows as its silhouette in the status bar; as the
+     * large icon the same bitmap keeps its colours. {@code color} only matters for
+     * monochrome symbols, which would otherwise be white on a light shade.
+     */
+    private Bitmap renderGlyph(final String glyph, final int color) {
+        final int size = Math.round(
+                GLYPH_DP * mAppContext.getResources().getDisplayMetrics().density);
+        final Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(color);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(size * 0.8f);
+        final Paint.FontMetrics fm = paint.getFontMetrics();
+        new Canvas(bitmap).drawText(glyph, size / 2f,
+                (size - fm.ascent - fm.descent) / 2f, paint);
+        return bitmap;
+    }
+
     private void post(final int txId, final int seq, final int status, final String text) {
-        mAppContext.sendBroadcastAsUser(new Intent(NOTIFIER_ACTION)
-                .setPackage(NOTIFIER_PACKAGE)
-                .putExtra("txid", txId)
-                .putExtra("seq", seq)
-                .putExtra("status", status)
-                .putExtra("text", text), android.os.UserHandle.CURRENT);
+        final NotificationManager nm = mAppContext.getSystemService(NotificationManager.class);
+        if (nm == null) {
+            return;
+        }
+        if (!mChannelCreated) {
+            // Lazily, so a unit that never enables the feature never grows a channel.
+            for (int i = 0; i < CHANNEL_IDS.length; i++) {
+                nm.createNotificationChannel(new NotificationChannel(CHANNEL_IDS[i],
+                        CHANNEL_NAMES[i], CHANNEL_IMPORTANCE[i]));
+            }
+            mChannelCreated = true;
+        }
+        // A leading symbol is the icon, not part of the message.
+        final String glyph = leadingGlyph(text);
+        final String shown = glyph != null ? text.substring(glyph.length()).trim() : text;
+        final String body = shown.isEmpty() ? "Event " + seq : shown;
+        final String label = STATUS_LABELS[status];
+        final String title = (label != null ? label + " \u00b7 " : "") + "Beacon " + txId;
+        final Notification.Builder b = new Notification.Builder(mAppContext, CHANNEL_IDS[status]);
+        if (glyph != null) {
+            final Bitmap bitmap = renderGlyph(glyph,
+                    STATUS_COLORS[status] != 0 ? STATUS_COLORS[status] : GLYPH_PLAIN_COLOR);
+            b.setSmallIcon(Icon.createWithBitmap(bitmap));
+            b.setLargeIcon(bitmap);
+        } else {
+            b.setSmallIcon(STATUS_ICONS[status]);
+        }
+        final Notification n = b
+                .setColor(STATUS_COLORS[status])
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new Notification.BigTextStyle().bigText(body)) // 51 bytes wraps
+                .setShowWhen(true)
+                .setAutoCancel(true)
+                .build();
+        // One slot per event, so events stack as a history rather than replacing each
+        // other. (A seq reused after the de-dupe window overwrites its old self.)
+        nm.notify(TAG, (txId << 8) | seq, n);
     }
 }

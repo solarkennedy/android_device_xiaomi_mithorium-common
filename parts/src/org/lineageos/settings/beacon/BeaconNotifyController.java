@@ -114,14 +114,18 @@ public final class BeaconNotifyController {
     private static final int HEADER_LEN = 5; // magic(2) ver txid seq
     private static final int VERSION = 1;
 
-    // Indexed by status. Importance is only the initial default; none bypasses DND.
+    // Indexed by status. All SILENT by design: delivery already trails the event by
+    // minutes to hours (we only hear beacons during other apps' scans), so nothing
+    // here is worth a sound, and silent channels sidestep the fact that Settings
+    // won't let the user edit a system-UID app's channels anyway. CRITICAL still
+    // gets a (silent) heads-up; the others just land in the shade.
     private static final String[] CHANNEL_IDS =
             { "beacon_ok", "beacon_warning", "beacon_critical", "beacon" };
     private static final String[] CHANNEL_NAMES =
             { "Beacon: OK", "Beacon: warning", "Beacon: critical", "Beacon" };
     private static final int[] CHANNEL_IMPORTANCE = {
-            NotificationManager.IMPORTANCE_LOW, NotificationManager.IMPORTANCE_DEFAULT,
-            NotificationManager.IMPORTANCE_HIGH, NotificationManager.IMPORTANCE_DEFAULT };
+            NotificationManager.IMPORTANCE_LOW, NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_HIGH, NotificationManager.IMPORTANCE_LOW };
     private static final String[] STATUS_LABELS = { "OK", "WARNING", "CRITICAL", null };
     private static final int[] STATUS_COLORS = { 0xFF2E7D32, 0xFFF9A825, 0xFFC62828, 0 };
     // Small icon when the text brings no glyph of its own.
@@ -442,8 +446,11 @@ public final class BeaconNotifyController {
         if (!mChannelCreated) {
             // Lazily, so a unit that never enables the feature never grows a channel.
             for (int i = 0; i < CHANNEL_IDS.length; i++) {
-                nm.createNotificationChannel(new NotificationChannel(CHANNEL_IDS[i],
-                        CHANNEL_NAMES[i], CHANNEL_IMPORTANCE[i]));
+                final NotificationChannel c = new NotificationChannel(CHANNEL_IDS[i],
+                        CHANNEL_NAMES[i], CHANNEL_IMPORTANCE[i]);
+                c.setSound(null, null);
+                c.enableVibration(false);
+                nm.createNotificationChannel(c);
             }
             mChannelCreated = true;
         }

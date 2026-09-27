@@ -425,6 +425,10 @@ public final class BeaconNotifyController {
             c.setSound(null, null);
             c.enableVibration(false);
             nm.createNotificationChannel(c);
+            // Earlier builds had one channel per severity; tidy them off units that ran them.
+            for (String old : new String[] { "beacon_ok", "beacon_warning", "beacon_critical" }) {
+                nm.deleteNotificationChannel(old);
+            }
             mChannelCreated = true;
         }
         // A leading symbol is the icon, not part of the message.

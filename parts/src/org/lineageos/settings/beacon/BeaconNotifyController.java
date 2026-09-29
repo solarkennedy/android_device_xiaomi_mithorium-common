@@ -121,13 +121,14 @@ public final class BeaconNotifyController {
     private static final long POLL_MS = 3 * 60 * 1000L;
 
     /**
-     * One event = one (txid, seq). Every sighting of it inside this window is a repeat:
-     * a batch flush carries every advert heard during a burst (dozens of copies), and
-     * the transmitter may deliberately re-burst for reliability. Time-boxed rather than
-     * forever so a transmitter whose seq restarts (reboot, 8-bit wrap) cannot have a new
-     * event mistaken for an old one.
+     * One event = one (txid, seq). Transmitters keep a message on air for hours
+     * (they advertise continuously; the phone only listens now and then), and every
+     * flush hears it again, so a sighting of a pair we already notified is a repeat
+     * for as long as a node could still be sending it. Keyed per pair, not per txid:
+     * several nodes share a txid and interleave different seqs. Time-boxed so a
+     * publisher that wraps or restarts its counter is never silenced for good.
      */
-    private static final long DEDUPE_WINDOW_MS = 10 * 60 * 1000L;
+    private static final long DEDUPE_WINDOW_MS = 12 * 60 * 60 * 1000L;
 
     private static BeaconNotifyController sInstance;
 
@@ -137,9 +138,8 @@ public final class BeaconNotifyController {
 
     private BluetoothLeScanner mScanner; // non-null while a scan is registered
     private boolean mChannelCreated;
-    // De-dupe state, indexed by txid: the last seq notified and when (elapsedRealtime).
-    private final int[] mLastSeq = new int[256];
-    private final long[] mLastSeqAt = new long[256];
+    // De-dupe state: when (elapsedRealtime) each (txid, seq) was last notified; 0 = never.
+    private final long[] mNotifiedAt = new long[256 * 256];
 
     /** pepito-only, same gate LifeModeController uses. */
     public static boolean isSupported() {
@@ -365,13 +365,12 @@ public final class BeaconNotifyController {
         Log.i(TAG, "FOUND " + addr + " rssi=" + result.getRssi() + " tx=" + txId + " seq=" + seq
                 + " text=\"" + text + "\" rt=" + realtime
                 + " up=" + uptime + " stackAgeMs=" + stackAgeMs);
-        if (mLastSeqAt[txId] != 0 && mLastSeq[txId] == seq
-                && realtime - mLastSeqAt[txId] < DEDUPE_WINDOW_MS) {
+        final int key = (txId << 8) | seq;
+        if (mNotifiedAt[key] != 0 && realtime - mNotifiedAt[key] < DEDUPE_WINDOW_MS) {
             Log.i(TAG, "repeat of tx=" + txId + " seq=" + seq + "; dropped");
             return;
         }
-        mLastSeq[txId] = seq;
-        mLastSeqAt[txId] = realtime;
+        mNotifiedAt[key] = realtime;
         if (!isEnabled()) {
             return; // switched off without a poke; stay quiet until reevaluate() disarms
         }

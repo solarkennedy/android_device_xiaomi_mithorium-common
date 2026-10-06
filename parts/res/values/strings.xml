@@ -78,4 +78,9 @@
     <string name="battery_wear_reset_confirm">Reset</string>
     <string name="battery_wear_reset_done">Battery wear data reset</string>
     <string name="battery_wear_reset_failed">Reset failed</string>
+
+    <!-- Doze help dialog. LineageOS devicesettings dropped these as unused
+         (packages_resources_devicesettings 01e1033), but DozeSettingsFragment uses them. -->
+    <string name="doze_settings_help_title">Help</string>
+    <string name="doze_settings_help_text">These features use sensor events to launch a doze notification pulse. The chosen sensor is only enabled when the device receives a notification, this helps to reduce battery usage. There is also an option to enable the chosen sensor as soon as the screen turns off, this will cause higher battery usage.</string>
 </resources>

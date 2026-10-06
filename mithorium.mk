@@ -409,7 +409,12 @@ PRODUCT_COPY_FILES += \
 # GPU still fully power-collapses on static screens AND during video playback
 # (MDP overlay composition) - so the floor only ever applies while the GPU is
 # actively rendering interactive frames, exactly where the win is.
-PRODUCT_VENDOR_PROPERTIES += \
+# system_ext, NOT vendor: gotweak_prop is system-owned (see property.te), and
+# init loads /vendor/build.prop as vendor_init, which may not set it. As a
+# vendor prop the default was denied at load ("avc: denied { set } for
+# property=persist.gotweak.gpu_perf_floor scontext=u:r:vendor_init") and the
+# floor stayed off unless the user had toggled it.
+PRODUCT_SYSTEM_EXT_PROPERTIES += \
     persist.gotweak.gpu_perf_floor=1
 
 # Ramdisk

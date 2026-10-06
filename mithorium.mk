@@ -285,6 +285,13 @@ PRODUCT_COPY_FILES += \
 # ION
 $(call soong_config_set_bool,libion,legacy_impl,true)
 
+# Gralloc: this platform only has the HIDL mapper 2.x (vendor manifest:
+# graphics.mapper@2.1 passthrough). Android 17's libui refuses gralloc 2/3 when
+# the device API level is >= 36 and core_graphics.require_gralloc4_or_newer is
+# set, unless built with LEGACY_GRALLOC. Without it the composer HAL aborts with
+# "gralloc-mapper is missing", taking SurfaceFlinger and zygote down with it.
+$(call soong_config_set_bool,libui,legacy_gralloc,true)
+
 # IPACM
 # PRODUCT_PACKAGES += \
 #     ipacm \

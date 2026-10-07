@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import org.lineageos.settings.beacon.BeaconNotifyController;
 import org.lineageos.settings.dirac.DiracUtils;
 import org.lineageos.settings.doze.DozeUtils;
 import org.lineageos.settings.emergencywatchdog.EmergencyWatchdogController;
@@ -58,12 +57,6 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         // Ships disabled; gated live on persist.gotweak.emergency_watchdog.
         if (EmergencyWatchdogController.isSupported()) {
             EmergencyWatchdogController.register(context);
-        }
-
-        // BLE-beacon notifications. Ships disabled; no scan is registered until
-        // persist.gotweak.ble_beacon is set.
-        if (BeaconNotifyController.isSupported()) {
-            BeaconNotifyController.register(context);
         }
     }
 

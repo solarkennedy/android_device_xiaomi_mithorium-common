@@ -51,6 +51,9 @@
          are wrapped in SecurityException guards regardless; see LifeModeController. -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Emergency-only watchdog status notifications (EmergencyWatchdogController).
+         Runtime permission; the system UID carries it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Greyscale (ColorDisplayManager.setSaturationLevel). Also signature|privileged,
          also carried by the system UID rather than a privapp entry. -->
     <uses-permission android:name="android.permission.CONTROL_DISPLAY_COLOR_TRANSFORMS" />
@@ -70,19 +73,6 @@
          screen-off/overnight stick is recovered on time; exact alarms need this
          since S. signature|privileged|appop - carried by the system UID. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
-    <!-- BLE-beacon notifications (BeaconNotifyController). BLUETOOTH_SCAN is a runtime
-         permission; as with BLUETOOTH_CONNECT above, the system UID carries it.
-         neverForLocation because we never derive location from a scan - and it keeps
-         results flowing when Life Mode has location switched off. POST_NOTIFICATIONS
-         is runtime too, same story. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-                     android:usesPermissionFlags="neverForLocation" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- The beacon scanner rides other apps' batch scans and finds out whether one is
-         running by reading the Bluetooth service's dump (no query exists for it).
-         dump() enforces DUMP; signature-level, carried by the system UID. -->
-    <uses-permission android:name="android.permission.DUMP" />
 
     <protected-broadcast android:name="com.android.systemui.doze.pulse" />
 

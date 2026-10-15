@@ -189,6 +189,25 @@ PRODUCT_VENDOR_PROPERTIES += \
     vendor.display.idle_time=4000000 \
     vendor.display.idle_time_inactive=4000000
 
+# Memory: lmkd
+# lmkd's "free swap" is min(SwapFree, easy_available * swap_compression_ratio),
+# ratio default 1, and easy_available = MemFree + inactive_file by default. On a
+# zram device that declares swap exhausted whenever free RAM dips under 10% of
+# the zram size (157 MB of a 1.5 GiB zram) while a gigabyte of zram sits unused,
+# and lmkd then kills cached apps with "swap is low". lz4 compresses 3.2:1 here;
+# relaxed_available_memory makes easy_available count active_file and the
+# reclaimable share of anon as well, so free swap tracks the real SwapFree.
+# lowmem_min_oom_score=1001 (> OOM_SCORE_ADJ_MAX) disables the other
+# pre-emptive path, a cached-app kill on a bare high-watermark breach (the high
+# watermark is ~20 MB on this zone layout). Together only the thrashing-based
+# reasons remain. Interleaved A/B on dut1 2026-10-15 (1200 MB anon hog x 12,
+# diag-tools/mglru-bench in the landing repo): kills per hog 7.2 -> 3.7, full
+# memory stall 3.5 s -> 2.2 s, background apps survive instead of cold-starting.
+PRODUCT_VENDOR_PROPERTIES += \
+    ro.lmk.swap_compression_ratio=3 \
+    ro.lmk.lowmem_min_oom_score=1001 \
+    ro.lmk.relaxed_available_memory=true
+
 # DRM
 PRODUCT_PACKAGES += \
     android.hardware.drm-service.clearkey \

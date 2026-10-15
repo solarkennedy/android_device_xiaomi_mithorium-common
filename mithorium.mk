@@ -434,7 +434,8 @@ PRODUCT_COPY_FILES += \
 # property=persist.gotweak.gpu_perf_floor scontext=u:r:vendor_init") and the
 # floor stayed off unless the user had toggled it.
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    persist.gotweak.gpu_perf_floor=1
+    persist.gotweak.gpu_perf_floor=1 \
+    persist.gotweak.mglru=1
 
 # Ramdisk
 PRODUCT_PACKAGES += \

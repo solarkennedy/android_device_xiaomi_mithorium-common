@@ -77,6 +77,17 @@ on property:persist.gotweak.gpu_perf_floor=1
 on property:persist.gotweak.gpu_perf_floor=0
     write /sys/class/kgsl/kgsl-3d0/min_pwrlevel 5
 
+# Multi-gen LRU (kernel CONFIG_LRU_GEN, pepito-24-mglru). Default ON via the
+# build-prop default in mithorium.mk (persist.gotweak.mglru=1), same scheme as
+# gpu_perf_floor. Flipping it drains and rebuilds the LRU lists, so it is a
+# live A/B switch with no reboot; the node is absent on kernels without the
+# port, in which case the write just fails quietly.
+on property:persist.gotweak.mglru=1
+    write /sys/kernel/mm/lru_gen/enabled y
+
+on property:persist.gotweak.mglru=0
+    write /sys/kernel/mm/lru_gen/enabled n
+
 # CPU cluster hotplug: cpu0-3 are the 1.4GHz cluster, cpu4-7 the ~1.1GHz one
 # (confirmed live on the DUT via scaling_max_freq). Offlining cpu1-3 pushes
 # most load onto the lower-clocked, lower-voltage cluster. cpu0 must stay

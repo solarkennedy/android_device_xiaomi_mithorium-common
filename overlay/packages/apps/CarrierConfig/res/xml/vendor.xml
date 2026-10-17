@@ -2186,6 +2186,13 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.-->
              as provisioned so the toggle shows. -->
         <boolean name="carrier_wfc_ims_available_bool" value="true" />
         <boolean name="carrier_volte_provisioning_required_bool" value="false" />
+        <!-- Show the "Calling preference" row (Verizon's carrier-id config hides
+             it). On pepito the choice is honoured by the qmux VoWiFi feeder, which
+             steers the modem's in-call IWLAN->LTE threshold on it (WfcBridge ->
+             persist.sys.pepito.wfc_mode -> wfc_wlan_bridge); the framework's own
+             WFC-mode push never reaches this v01 modem. Default stays
+             cellular-preferred (stock behaviour) until the user changes it. -->
+        <boolean name="editable_wfc_mode_bool" value="true" />
     </carrier_config>
 
     <carrier_config mcc="312" mnc="530">

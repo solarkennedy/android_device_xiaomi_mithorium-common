@@ -41,3 +41,11 @@ get_prop(qti_init_shell, gotweak_prop)
 # what runs our trigger. Checked before relying on one, same as the two
 # gotchas above.
 allow vendor_init sysfs_devices_system_cpu:file rw_file_perms;
+
+# Flash power cap: init.gotweaks.rc writes /sys/module/msm_flash/parameters/
+# flash_cap_ma (plain `sysfs` label, no genfs entry) from the vendor_init
+# domain. Covered by system/sepolicy/private/vendor_init.te's
+# `allow vendor_init { sysfs_type -sysfs_usermodehelper }:file rw_file_perms`
+# (checked 2026-10-22); no device grant needed. If a future base policy
+# narrows that, label the node (genfs_contexts) and grant it here like
+# sysfs_kgsl above.

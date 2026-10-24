@@ -20,8 +20,6 @@
 #include <android-base/logging.h>
 #include <fcntl.h>
 
-#include <algorithm>
-
 using ::android::base::ReadFileToString;
 using ::android::base::WriteStringToFile;
 
@@ -43,12 +41,6 @@ static const std::string kLCDFile = "/sys/class/backlight/panel0-backlight/brigh
 static const std::string kLCDFile2 = "/sys/class/leds/lcd-backlight/brightness";
 static const std::string kLCDMaxFile = "/sys/class/backlight/panel0-backlight/max_brightness";
 static const std::string kLCDMaxFile2 = "/sys/class/leds/lcd-backlight/max_brightness";
-
-// PWM-driven LED (leds-qpnp MPP sink fed by an LPG channel): pwm_us is the
-// period, brightness the duty cycle. Solid uses a 1 ms period; the PMIC LPG
-// period tops out at 384 s.
-static constexpr uint32_t kLedPwmSolidPeriodUs = 1000;
-static constexpr uint64_t kLedPwmMaxPeriodMs = 384000;
 
 #define AutoHwLight(light) {.id = (int)light, .type = light, .ordinal = 0}
 
@@ -78,9 +70,6 @@ Lights::Lights() {
     else if (!access(((mLedUseRedAsWhite ? led_paths[RED] : led_paths[WHITE]) + "breath").c_str(),
             W_OK))
         mLedBreathType = LedBreathType::BREATH;
-    else if (mWhiteLed && !access(((mLedUseRedAsWhite ? led_paths[RED] : led_paths[WHITE]) +
-            "pwm_us").c_str(), W_OK))
-        mLedBreathType = LedBreathType::PWM;
     else
         mLedBreathType = LedBreathType::UNSUPPORTED;
 }
@@ -135,13 +124,6 @@ void Lights::setSpeakerLightLocked(const HwLightState& state) {
 
     blink = (state.flashOnMs != 0 && state.flashOffMs != 0);
 
-    if (mLedBreathType == LedBreathType::PWM) {
-        const bool timed = blink && state.flashMode != FlashMode::NONE;
-        setLedPwm(mLedUseRedAsWhite ? RED : WHITE, RgbaToBrightness(state.color),
-                timed ? state.flashOnMs : 0, timed ? state.flashOffMs : 0);
-        return;
-    }
-
     switch (state.flashMode) {
         case FlashMode::HARDWARE:
         case FlashMode::TIMED:
@@ -194,28 +176,6 @@ bool Lights::setLedBreath(led_type led, uint32_t value) {
 
 bool Lights::setLedBrightness(led_type led, uint32_t value) {
     return WriteToFile(led_paths[led] + "brightness", value);
-}
-
-// A blink is one PWM period of onMs + offMs with an onMs duty cycle, so it keeps
-// running in the PMIC while the AP sleeps. The flash is always at full current:
-// the duty cycle is spent on the blink, so brightness only dims a solid light.
-bool Lights::setLedPwm(led_type led, uint32_t brightness, int onMs, int offMs) {
-    uint32_t periodUs = kLedPwmSolidPeriodUs;
-
-    if (brightness && onMs > 0 && offMs > 0) {
-        const uint64_t periodMs = std::min<uint64_t>((uint64_t)onMs + offMs, kLedPwmMaxPeriodMs);
-        periodUs = periodMs * 1000;
-        brightness = std::max<uint64_t>(1, 255 * std::min<uint64_t>(onMs, periodMs) / periodMs);
-    }
-
-    bool rc = true;
-    if (periodUs != mLedPwmPeriodUs) {
-        rc = WriteToFile(led_paths[led] + "pwm_us", periodUs);
-        if (rc)
-            mLedPwmPeriodUs = periodUs;
-    }
-
-    return setLedBrightness(led, brightness) && rc;
 }
 
 // Utils

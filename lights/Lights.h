@@ -36,7 +36,6 @@ enum class LedBreathType {
     UNSUPPORTED = 0,
     BLINK,
     BREATH,
-    PWM,
 };
 
 class Lights : public BnLights {
@@ -52,7 +51,6 @@ private:
 
     bool setLedBreath(led_type led, uint32_t value);
     bool setLedBrightness(led_type led, uint32_t value);
-    bool setLedPwm(led_type led, uint32_t brightness, int onMs, int offMs);
 
     bool IsLit(uint32_t color);
     uint32_t RgbaToBrightness(uint32_t color);
@@ -64,7 +62,6 @@ private:
     enum LedBreathType mLedBreathType;
     bool mLedUseRedAsWhite;
     bool mWhiteLed;
-    uint32_t mLedPwmPeriodUs = 0;
 
     HwLightState mNotification;
     HwLightState mBattery;

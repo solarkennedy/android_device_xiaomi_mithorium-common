@@ -31,6 +31,7 @@ import org.lineageos.settings.gotweaks.GotweaksBatterySaverReceiver;
 import org.lineageos.settings.lifemode.LifeModeController;
 import org.lineageos.settings.lifemode.LifeModeSettingsActivity;
 import org.lineageos.settings.lifemode.LifeModeTile;
+import org.lineageos.settings.notificationled.NotificationLedDefaults;
 
 public class BootCompletedReceiver extends BroadcastReceiver {
 
@@ -57,6 +58,11 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         // Ships disabled; gated live on persist.gotweak.emergency_watchdog.
         if (EmergencyWatchdogController.isSupported()) {
             EmergencyWatchdogController.register(context);
+        }
+
+        // White notification LED: "Blink light" off by default, applied once.
+        if (NotificationLedDefaults.isSupported()) {
+            NotificationLedDefaults.applyOnce(context);
         }
     }
 

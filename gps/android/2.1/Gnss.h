@@ -30,6 +30,7 @@
 #include <GnssNi.h>
 #include <GnssDebug.h>
 #include <GnssAntennaInfo.h>
+#include <GnssXtra.h>
 
 #include <android/hardware/gnss/2.1/IGnss.h>
 #include <android/hardware/gnss/measurement_corrections/1.1/IMeasurementCorrections.h>
@@ -98,9 +99,7 @@ struct Gnss : public IGnss {
         return nullptr;
     }
 
-    inline Return<sp<V1_0::IGnssXtra>> getExtensionXtra() override {
-        return nullptr;
-    }
+    Return<sp<V1_0::IGnssXtra>> getExtensionXtra() override;
 
     Return<sp<V1_0::IGnssDebug>> getExtensionGnssDebug() override;
 
@@ -176,6 +175,7 @@ struct Gnss : public IGnss {
     sp<V2_1::IGnssAntennaInfo> mGnssAntennaInfo = nullptr;
     sp<IMeasurementCorrectionsV1_1> mGnssMeasCorr = nullptr;
     sp<IGnssVisibilityControl> mVisibCtrl = nullptr;
+    sp<V1_0::IGnssXtra> mGnssXtra = nullptr;
 
     GnssAPIClient* mApi = nullptr;
     GnssConfig mPendingConfig;

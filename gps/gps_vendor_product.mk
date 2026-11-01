@@ -5,6 +5,7 @@ PRODUCT_PACKAGES += izat.conf
 PRODUCT_PACKAGES += lowi.conf
 PRODUCT_PACKAGES += sap.conf
 PRODUCT_PACKAGES += xtwifi.conf
+PRODUCT_PACKAGES += gps_debug.conf.vendor
 PRODUCT_PACKAGES += libloc_pla_headers
 PRODUCT_PACKAGES += liblocation_api_headers
 PRODUCT_PACKAGES += libgps.utils_headers

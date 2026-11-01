@@ -68,6 +68,7 @@ cc_library_shared {
         "GnssAntennaInfo.cpp",
         "MeasurementCorrections.cpp",
         "GnssVisibilityControl.cpp",
+        "GnssXtra.cpp",
         "location_api/GnssAPIClient.cpp",
         "location_api/MeasurementAPIClient.cpp",
         "location_api/GeofenceAPIClient.cpp",

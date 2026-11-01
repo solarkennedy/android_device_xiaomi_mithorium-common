@@ -362,6 +362,17 @@ Return<sp<V1_0::IAGnss>> Gnss::getExtensionAGnss()  {
     return nullptr;
 }
 
+Return<sp<V1_0::IGnssXtra>> Gnss::getExtensionXtra()  {
+    ENTRY_LOG_CALLFLOW();
+    // The framework asks for this once at startup (and again after a HAL
+    // restart), so turning the switch on needs a reboot; GnssXtra re-checks it
+    // before every injection and download request.
+    if (mGnssXtra == nullptr && GnssXtra::enabled()) {
+        mGnssXtra = new GnssXtra();
+    }
+    return mGnssXtra;
+}
+
 Return<sp<V1_0::IGnssNi>> Gnss::getExtensionGnssNi()  {
     ENTRY_LOG_CALLFLOW();
     // deprecated function. Must return nullptr to pass VTS

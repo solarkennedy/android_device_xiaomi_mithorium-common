@@ -9,3 +9,6 @@ get_prop(hal_gnss_qti, boot_status_prop);
 # execute_no_trans a non-shell exec_type, hal_neverallows.te). The shim reads
 # the qmux enable prop in-process and only forces ipc_router when it is set.
 get_prop(hal_gnss_qti, vendor_qmux_prop)
+
+# XTRA injection off switch, persist.gotweak.gnss_xtra (gps/android/2.1/GnssXtra.cpp).
+get_prop(hal_gnss_qti, gotweak_prop)

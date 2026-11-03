@@ -36,6 +36,12 @@ constexpr unsigned kIndTimeoutMs = 10000;
 
 constexpr auto kRefreshAfterSuccess = std::chrono::hours(24);
 constexpr auto kRefreshAfterFailure = std::chrono::hours(6);
+// A failed injection is retried with the same bytes after these waits before
+// falling back to kRefreshAfterFailure. The framework downloads at boot and the
+// modem can reject the last part then (GENERAL_FAILURE ~40 s after boot on new2,
+// 2026-11-02; the same file went in 3 min later), and it downloads only once per
+// boot, so without a retry a phone could go days without XTRA.
+constexpr std::chrono::minutes kRetryWaits[] = {std::chrono::minutes(2), std::chrono::minutes(10)};
 constexpr auto kRefreshPoll = std::chrono::minutes(30);
 
 // Classic QCCI entry points exported by /vendor/lib64/libqmi_cci.so; resolved
@@ -309,8 +315,15 @@ Return<bool> GnssXtra::injectXtraData(const hidl_string& xtraData) {
 }
 
 void GnssXtra::injectWorker(std::string data) {
-    const bool ok = injectToModem(data);
+    bool ok = injectToModem(data);
     ALOGI("XTRA injection of %zu bytes %s", data.size(), ok ? "succeeded" : "failed");
+    for (auto wait : kRetryWaits) {
+        if (ok || !enabled()) break;
+        ALOGI("retrying the XTRA injection in %lld min", static_cast<long long>(wait.count()));
+        std::this_thread::sleep_for(wait);
+        ok = injectToModem(data);
+        ALOGI("XTRA injection retry of %zu bytes %s", data.size(), ok ? "succeeded" : "failed");
+    }
     std::lock_guard<std::mutex> lock(mMutex);
     mInjecting = false;
     mNextRequest = Clock::now() + (ok ? kRefreshAfterSuccess : kRefreshAfterFailure);

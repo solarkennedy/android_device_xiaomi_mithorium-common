@@ -181,7 +181,7 @@ vendor.video.disable.ubwc=1
 persist.vendor.radio.force_on_dc=true
 
 # +PAN-21323 add by jingyao.wt 20190621,[Mexico][Telcel AMX] String during wifi calling
-persist.vendor.radio.data_con_rprt=true
+persist.vendor.radio.data_con_rprt?=true
 # -PAN-21323 add by jingyao.wt
 
 #ODM328-4166,DUT sends IPV4V6 in attach request after setting APN protocol to ipv6 only

@@ -110,6 +110,16 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.-->
         <boolean name="carrier_call_composer_supported_bool" value="false"/>
         <!-- Config for explicit call transfer support for an IMS call -->
         <boolean name="carrier_allow_transfer_ims_call_bool" value="true" />
+
+        <!-- Terminal-based call waiting: handle call waiting on the phone and never send
+             it to the network (sync type 0 = CALL_WAITING_SYNC_NONE). Only takes effect
+             where the device also sets ro.telephony.force_terminal_based_cw (pepito):
+             there a CW query/set over QMI makes the modem attempt CSFB, which fails on
+             LTE-only networks and drops IMS for minutes. Inert everywhere else. -->
+        <int-array name="imsss.ut_terminal_based_services_int_array" num="1">
+            <item value="0"/>
+        </int-array>
+        <int name="imsss.terminal_based_call_waiting_sync_type_int" value="0"/>
     </carrier_config>
 
     <carrier_config mcc="001" mnc="01">
